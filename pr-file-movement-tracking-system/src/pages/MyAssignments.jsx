@@ -86,6 +86,10 @@ export default function MyAssignments() {
       toast.success("Work started");
       setIsUpdateOpen(false);
     },
+    onError: (error) => {
+      console.error("Failed to start work:", error);
+      toast.error(`Failed to start work: ${error.message || "Unknown error"}`);
+    },
   });
 
   const completeWorkMutation = useMutation({
@@ -137,6 +141,10 @@ export default function MyAssignments() {
       toast.success("Work completed and signed off");
       setIsUpdateOpen(false);
       setSelectedAssignment(null);
+    },
+    onError: (error) => {
+      console.error("Failed to complete work:", error);
+      toast.error(`Failed to complete work: ${error.message || "Unknown error"}`);
     },
   });
 
