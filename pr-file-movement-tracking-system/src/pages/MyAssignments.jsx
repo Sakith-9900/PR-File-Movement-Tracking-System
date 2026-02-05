@@ -7,12 +7,12 @@ import { format } from "date-fns";
 import PageHeader from "@/components/common/PageHeader";
 import StatusBadge from "@/components/common/StatusBadge";
 import EmptyState from "@/components/common/EmptyState";
-import UpdateWorkDialog from "@/components/prfile/UpdateWorkDialog";
+import UpdateWorkDialog from "@/components/profile/UpdateWorkDialog";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Skeleton } from "@/components/ui/skeleton";
-import { 
+import {
   Select,
   SelectContent,
   SelectItem,
@@ -20,9 +20,9 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
-import { 
-  FileText, 
-  Calendar, 
+import {
+  FileText,
+  Calendar,
   Play,
   CheckCircle2,
   Clock,
@@ -54,7 +54,7 @@ export default function MyAssignments() {
   });
 
   // Filter assignments by selected employee
-  const assignments = selectedEmployee 
+  const assignments = selectedEmployee
     ? allAssignments.filter(a => a.employee_id === employees.find(e => e.id === selectedEmployee)?.employee_id)
     : allAssignments;
 
@@ -91,7 +91,7 @@ export default function MyAssignments() {
   const completeWorkMutation = useMutation({
     mutationFn: async ({ assignmentId, data }) => {
       const assignment = allAssignments.find(a => a.id === assignmentId);
-      
+
       // Update assignment
       await base44.entities.FileAssignment.update(assignmentId, {
         status: "Completed",
@@ -163,8 +163,8 @@ export default function MyAssignments() {
 
   return (
     <div className="p-4 sm:p-6 lg:p-8 max-w-5xl mx-auto">
-      <PageHeader 
-        title="My Assignments" 
+      <PageHeader
+        title="My Assignments"
         subtitle="View and update your assigned files"
       />
 
@@ -253,7 +253,7 @@ export default function MyAssignments() {
                         </div>
                       </div>
                     </div>
-                    
+
                     <div className="flex items-center gap-2 sm:flex-shrink-0">
                       {assignment.status !== "Completed" && (
                         <Button onClick={() => openUpdateDialog(assignment)}>
@@ -277,7 +277,7 @@ export default function MyAssignments() {
                       </Link>
                     </div>
                   </div>
-                  
+
                   {assignment.work_remarks && (
                     <div className="mt-4 pt-4 border-t border-slate-100">
                       <p className="text-xs text-slate-500 mb-1">Work Remarks</p>

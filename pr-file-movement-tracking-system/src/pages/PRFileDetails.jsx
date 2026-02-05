@@ -6,17 +6,17 @@ import { createPageUrl } from "@/utils";
 import { format } from "date-fns";
 import PageHeader from "@/components/common/PageHeader";
 import StatusBadge from "@/components/common/StatusBadge";
-import FileTimeline from "@/components/prfile/FileTimeline";
-import AssignmentDialog from "@/components/prfile/AssignmentDialog";
+import FileTimeline from "@/components/profile/FileTimeline";
+import AssignmentDialog from "@/components/profile/AssignmentDialog";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { 
-  ArrowLeft, 
-  UserPlus, 
-  FileText, 
-  Calendar, 
+import {
+  ArrowLeft,
+  UserPlus,
+  FileText,
+  Calendar,
   User,
   Clock,
   CheckCircle2,
@@ -30,7 +30,7 @@ import { toast } from "sonner";
 export default function PRFileDetails() {
   const urlParams = new URLSearchParams(window.location.search);
   const fileId = urlParams.get("id");
-  
+
   const [isAssignOpen, setIsAssignOpen] = useState(false);
   const queryClient = useQueryClient();
 
@@ -66,7 +66,7 @@ export default function PRFileDetails() {
   const assignMutation = useMutation({
     mutationFn: async (assignmentData) => {
       const sequenceNumber = assignments.length + 1;
-      
+
       await base44.entities.FileAssignment.create({
         pr_file_id: prFile.id,
         pr_number: prFile.pr_number,
@@ -158,7 +158,7 @@ export default function PRFileDetails() {
           <ArrowLeft className="w-4 h-4 mr-1" />
           Back to PR Files
         </Link>
-        
+
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div>
             <div className="flex items-center gap-3 mb-2">

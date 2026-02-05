@@ -4,9 +4,9 @@ import { base44 } from "@/api/base44Client";
 import { format } from "date-fns";
 import PageHeader from "@/components/common/PageHeader";
 import EmptyState from "@/components/common/EmptyState";
-import PRFileForm from "@/components/prfile/PRFileForm";
-import PRFileCard from "@/components/prfile/PRFileCard";
-import AssignmentDialog from "@/components/prfile/AssignmentDialog";
+import PRFileForm from "@/components/profile/PRFileForm";
+import PRFileCard from "@/components/profile/PRFileCard";
+import AssignmentDialog from "@/components/profile/AssignmentDialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -74,7 +74,7 @@ export default function PRFiles() {
     mutationFn: async ({ prFile, assignmentData }) => {
       const existingAssignments = assignments.filter(a => a.pr_file_id === prFile.id);
       const sequenceNumber = existingAssignments.length + 1;
-      
+
       // Create assignment
       await base44.entities.FileAssignment.create({
         pr_file_id: prFile.id,
@@ -127,7 +127,7 @@ export default function PRFiles() {
   };
 
   const filteredFiles = prFiles.filter(file => {
-    const matchesSearch = 
+    const matchesSearch =
       file.pr_number?.toLowerCase().includes(searchTerm.toLowerCase()) ||
       file.contract_name?.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesStatus = statusFilter === "all" || file.status === statusFilter;
@@ -147,8 +147,8 @@ export default function PRFiles() {
 
   return (
     <div className="p-4 sm:p-6 lg:p-8 max-w-7xl mx-auto">
-      <PageHeader 
-        title="PR Files" 
+      <PageHeader
+        title="PR Files"
         subtitle="Manage and track official file movement"
       >
         <Button onClick={() => { setSelectedFile(null); setIsFormOpen(true); }}>
@@ -197,9 +197,9 @@ export default function PRFiles() {
       ) : (
         <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
           {filteredFiles.map(file => (
-            <PRFileCard 
-              key={file.id} 
-              prFile={file} 
+            <PRFileCard
+              key={file.id}
+              prFile={file}
               onAssign={openAssignDialog}
             />
           ))}
