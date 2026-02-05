@@ -68,6 +68,10 @@ export default function PRFiles() {
       toast.success("PR File created successfully");
       setIsFormOpen(false);
     },
+    onError: (error) => {
+      console.error("Failed to create PR file:", error);
+      toast.error(`Failed to create PR file: ${error.message || "Unknown error"}`);
+    },
   });
 
   const assignMutation = useMutation({
@@ -110,6 +114,10 @@ export default function PRFiles() {
       toast.success("File assigned successfully");
       setIsAssignOpen(false);
       setSelectedFile(null);
+    },
+    onError: (error) => {
+      console.error("Failed to assign file:", error);
+      toast.error(`Failed to assign file: ${error.message || "Unknown error"}`);
     },
   });
 
