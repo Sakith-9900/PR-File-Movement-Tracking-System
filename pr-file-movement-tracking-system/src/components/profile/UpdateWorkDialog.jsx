@@ -12,7 +12,7 @@ import {
   DialogFooter,
 } from "@/components/ui/dialog";
 import { Loader2, Upload, FileIcon, X, Play, CheckCircle } from "lucide-react";
-import { base44 } from "@/api/base44Client";
+import { base44 } from "@/api/Client";
 import { toast } from "sonner";
 
 export default function UpdateWorkDialog({ 
