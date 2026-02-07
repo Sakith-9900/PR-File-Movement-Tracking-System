@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { base44 } from "@/api/Client";
+import { supabase } from "@/config/supabase";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -31,7 +31,18 @@ export default function RFQPOSection({ prFile, rfqs = [], pos = [] }) {
   const createRFQMutation = useMutation({
     mutationFn: async (data) => {
       const year = new Date().getFullYear();
-      const latestNumber = await base44.entities.RFQ.getLatestNumber(year);
+
+      // Get latest RFQ number directly
+      const { data: latestRFQs, error: fetchError } = await supabase
+        .from('rfqs')
+        .select('rfq_number')
+        .ilike('rfq_number', `RFQ-${year}-%`)
+        .order('rfq_number', { ascending: false })
+        .limit(1);
+
+      if (fetchError && fetchError.code !== 'PGRST116') throw fetchError;
+
+      const latestNumber = latestRFQs?.[0]?.rfq_number;
 
       let nextNum = 1;
       if (latestNumber) {
@@ -43,7 +54,7 @@ export default function RFQPOSection({ prFile, rfqs = [], pos = [] }) {
 
       const rfqNumber = `RFQ-${year}-${String(nextNum).padStart(4, "0")}`;
 
-      const rfq = await base44.entities.RFQ.create({
+      const { data: rfq, error: createError } = await supabase.from('rfqs').insert({
         rfq_number: rfqNumber,
         rfq_date: data.rfq_date,
         pr_file_id: prFile.id,
@@ -51,9 +62,11 @@ export default function RFQPOSection({ prFile, rfqs = [], pos = [] }) {
         contract_name: prFile.contract_name,
         status: "Open",
         remarks: data.remarks,
-      });
+      }).select().single();
 
-      await base44.entities.AuditLog.create({
+      if (createError) throw createError;
+
+      await supabase.from('audit_logs').insert({
         pr_file_id: prFile.id,
         pr_number: prFile.pr_number,
         action: `RFQ ${rfqNumber} created`,
@@ -79,7 +92,18 @@ export default function RFQPOSection({ prFile, rfqs = [], pos = [] }) {
       }
 
       const year = new Date().getFullYear();
-      const latestNumber = await base44.entities.PO.getLatestNumber(year);
+
+      // Get latest PO number directly
+      const { data: latestPOs, error: fetchError } = await supabase
+        .from('pos')
+        .select('po_number')
+        .ilike('po_number', `PO-${year}-%`)
+        .order('po_number', { ascending: false })
+        .limit(1);
+
+      if (fetchError && fetchError.code !== 'PGRST116') throw fetchError;
+
+      const latestNumber = latestPOs?.[0]?.po_number;
 
       let nextNum = 1;
       if (latestNumber) {
@@ -91,7 +115,7 @@ export default function RFQPOSection({ prFile, rfqs = [], pos = [] }) {
 
       const poNumber = `PO-${year}-${String(nextNum).padStart(4, "0")}`;
 
-      const po = await base44.entities.PO.create({
+      const { data: po, error: createError } = await supabase.from('pos').insert({
         po_number: poNumber,
         po_date: data.po_date,
         rfq_id: selectedRFQ.id,
@@ -101,9 +125,11 @@ export default function RFQPOSection({ prFile, rfqs = [], pos = [] }) {
         contract_name: prFile.contract_name,
         status: "Open",
         remarks: data.remarks,
-      });
+      }).select().single();
 
-      await base44.entities.AuditLog.create({
+      if (createError) throw createError;
+
+      await supabase.from('audit_logs').insert({
         pr_file_id: prFile.id,
         pr_number: prFile.pr_number,
         action: `PO ${poNumber} created (from ${selectedRFQ.rfq_number})`,
