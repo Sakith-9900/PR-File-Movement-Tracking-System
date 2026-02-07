@@ -1,0 +1,44 @@
+{
+  "name": "Employee",
+  "type": "object",
+  "properties": {
+    "employee_id": {
+      "type": "string",
+      "description": "Unique employee identifier"
+    },
+    "short_code": {
+      "type": "string",
+      "description": "Short code for quick identification (e.g., ABC, JKS)"
+    },
+    "full_name": {
+      "type": "string",
+      "description": "Full name of the employee"
+    },
+    "department": {
+      "type": "string",
+      "description": "Department name"
+    },
+    "designation": {
+      "type": "string",
+      "description": "Job title/designation"
+    },
+    "email": {
+      "type": "string",
+      "description": "Email address"
+    },
+    "phone": {
+      "type": "string",
+      "description": "Phone number"
+    },
+    "is_active": {
+      "type": "boolean",
+      "default": true,
+      "description": "Whether employee is currently active"
+    }
+  },
+  "required": [
+    "employee_id",
+    "short_code",
+    "full_name"
+  ]
+}
