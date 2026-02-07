@@ -1,0 +1,69 @@
+{
+  "name": "FileAssignment",
+  "type": "object",
+  "properties": {
+    "pr_file_id": {
+      "type": "string",
+      "description": "Reference to PRFile"
+    },
+    "pr_number": {
+      "type": "string",
+      "description": "PR number for quick reference"
+    },
+    "employee_id": {
+      "type": "string",
+      "description": "Assigned employee ID"
+    },
+    "employee_code": {
+      "type": "string",
+      "description": "Assigned employee short code"
+    },
+    "employee_name": {
+      "type": "string",
+      "description": "Employee full name"
+    },
+    "assignment_date": {
+      "type": "string",
+      "format": "date-time",
+      "description": "When file was assigned"
+    },
+    "start_date": {
+      "type": "string",
+      "format": "date-time",
+      "description": "When employee started working"
+    },
+    "end_date": {
+      "type": "string",
+      "format": "date-time",
+      "description": "When employee completed work"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "Assigned",
+        "In Progress",
+        "Completed",
+        "Returned"
+      ],
+      "default": "Assigned"
+    },
+    "work_remarks": {
+      "type": "string",
+      "description": "Work done remarks by employee"
+    },
+    "sequence_number": {
+      "type": "number",
+      "description": "Order in the timeline"
+    },
+    "assigned_by": {
+      "type": "string",
+      "description": "Admin who made the assignment"
+    }
+  },
+  "required": [
+    "pr_file_id",
+    "pr_number",
+    "employee_id",
+    "employee_code"
+  ]
+}
