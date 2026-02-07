@@ -79,8 +79,34 @@ export const supabaseClient = {
     Employee: createEntity('employees'),
     FileAssignment: createEntity('file_assignments'),
     FileDocument: createEntity('file_documents'),
-    RFQ: createEntity('rfqs'),
-    PO: createEntity('pos'),
+    RFQ: {
+      ...createEntity('rfqs'),
+      getLatestNumber: async (year) => {
+        const { data, error } = await supabase
+          .from('rfqs')
+          .select('rfq_number')
+          .ilike('rfq_number', `RFQ-${year}-%`)
+          .order('rfq_number', { ascending: false })
+          .limit(1);
+
+        if (error && error.code !== 'PGRST116') throw error; // PGRST116 is no rows found
+        return data?.[0]?.rfq_number || null;
+      }
+    },
+    PO: {
+      ...createEntity('pos'),
+      getLatestNumber: async (year) => {
+        const { data, error } = await supabase
+          .from('pos')
+          .select('po_number')
+          .ilike('po_number', `PO-${year}-%`)
+          .order('po_number', { ascending: false })
+          .limit(1);
+
+        if (error && error.code !== 'PGRST116') throw error;
+        return data?.[0]?.po_number || null;
+      }
+    },
     AuditLog: createEntity('audit_logs'),
     User: createEntity('users'),
   },
@@ -94,6 +120,27 @@ export const supabaseClient = {
     getCurrentUser: async () => {
       const { data: { user } } = await supabase.auth.getUser();
       return user;
+    },
+    syncUser: async (user) => {
+      if (!user) return;
+
+      // Check if user exists in public.users
+      const { data: existingUser } = await supabase
+        .from('users')
+        .select('id')
+        .eq('id', user.id)
+        .single();
+
+      if (!existingUser) {
+        // Create public user record if not exists
+        await supabase.from('users').insert({
+          id: user.id,
+          email: user.email,
+          short_code: user.email.split('@')[0].toUpperCase(), // Default short code
+          is_active: true,
+          created_at: new Date().toISOString()
+        });
+      }
     }
   },
   // Add appLogs namespace for NavigationTracker compatibility
