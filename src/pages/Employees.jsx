@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { base44 } from "@/api/Client";
+import { supabase } from "@/config/supabase";
 import PageHeader from "@/components/common/PageHeader";
 import EmptyState from "@/components/common/EmptyState";
 import EmployeeForm from "@/components/employees/EmployeeForm";
@@ -19,11 +19,26 @@ export default function Employees() {
 
   const { data: employees = [], isLoading, isError, error } = useQuery({
     queryKey: ["employees"],
-    queryFn: () => base44.entities.Employee.list(),
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('employees')
+        .select('*')
+        .order('created_at', { ascending: false });
+      if (error) throw error;
+      return data;
+    },
   });
 
   const createMutation = useMutation({
-    mutationFn: (data) => base44.entities.Employee.create(data),
+    mutationFn: async (data) => {
+      const { data: newEmployee, error } = await supabase
+        .from('employees')
+        .insert(data)
+        .select()
+        .single();
+      if (error) throw error;
+      return newEmployee;
+    },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["employees"] });
       toast.success("Employee created successfully");
@@ -32,7 +47,16 @@ export default function Employees() {
   });
 
   const updateMutation = useMutation({
-    mutationFn: ({ id, data }) => base44.entities.Employee.update(id, data),
+    mutationFn: async ({ id, data }) => {
+      const { data: updatedEmployee, error } = await supabase
+        .from('employees')
+        .update(data)
+        .eq('id', id)
+        .select()
+        .single();
+      if (error) throw error;
+      return updatedEmployee;
+    },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["employees"] });
       toast.success("Employee updated successfully");
