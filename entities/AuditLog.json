@@ -1,0 +1,57 @@
+{
+  "name": "AuditLog",
+  "type": "object",
+  "properties": {
+    "pr_file_id": {
+      "type": "string",
+      "description": "Reference to PRFile"
+    },
+    "pr_number": {
+      "type": "string",
+      "description": "PR number"
+    },
+    "action": {
+      "type": "string",
+      "description": "Action performed"
+    },
+    "action_type": {
+      "type": "string",
+      "enum": [
+        "Created",
+        "Assigned",
+        "Started",
+        "Updated",
+        "Completed",
+        "Returned",
+        "Closed",
+        "Document Uploaded"
+      ],
+      "description": "Type of action"
+    },
+    "performed_by_code": {
+      "type": "string",
+      "description": "Short code of person who performed action"
+    },
+    "performed_by_name": {
+      "type": "string",
+      "description": "Name of person"
+    },
+    "details": {
+      "type": "string",
+      "description": "Additional details"
+    },
+    "old_value": {
+      "type": "string",
+      "description": "Previous value if applicable"
+    },
+    "new_value": {
+      "type": "string",
+      "description": "New value if applicable"
+    }
+  },
+  "required": [
+    "pr_file_id",
+    "action",
+    "action_type"
+  ]
+}
