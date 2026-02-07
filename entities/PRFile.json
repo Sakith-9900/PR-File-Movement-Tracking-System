@@ -1,0 +1,70 @@
+{
+  "name": "PRFile",
+  "type": "object",
+  "properties": {
+    "pr_number": {
+      "type": "string",
+      "description": "Auto-generated PR number"
+    },
+    "pr_date": {
+      "type": "string",
+      "format": "date",
+      "description": "Date of PR creation"
+    },
+    "contract_name": {
+      "type": "string",
+      "description": "Reference contract name"
+    },
+    "contract_reference": {
+      "type": "string",
+      "description": "Contract reference number if any"
+    },
+    "description": {
+      "type": "string",
+      "description": "Brief description of the file"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "Open",
+        "In Progress",
+        "Pending Review",
+        "Closed"
+      ],
+      "default": "Open",
+      "description": "Current status of the file"
+    },
+    "current_holder_id": {
+      "type": "string",
+      "description": "Employee ID of current file holder"
+    },
+    "current_holder_code": {
+      "type": "string",
+      "description": "Short code of current file holder"
+    },
+    "priority": {
+      "type": "string",
+      "enum": [
+        "Low",
+        "Medium",
+        "High",
+        "Urgent"
+      ],
+      "default": "Medium"
+    },
+    "remarks": {
+      "type": "string",
+      "description": "General remarks"
+    },
+    "closed_date": {
+      "type": "string",
+      "format": "date",
+      "description": "Date when file was closed"
+    }
+  },
+  "required": [
+    "pr_number",
+    "pr_date",
+    "contract_name"
+  ]
+}
