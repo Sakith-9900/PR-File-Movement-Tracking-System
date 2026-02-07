@@ -24,6 +24,7 @@ const navigation = [
   { name: "My Assignments", href: "MyAssignments", icon: ClipboardList },
   { name: "Master Sheet", href: "MasterSheet", icon: Table2 },
   { name: "Employees", href: "Employees", icon: Users },
+  { name: "User Management", href: "UserManagement", icon: Users },
   { name: "Reports", href: "Reports", icon: BarChart3 },
 ];
 
