@@ -1,23 +1,6 @@
 import React, { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { base44 } from "@/api/Client";
-import PageHeader from "@/components/common/PageHeader";
-import EmptyState from "@/components/common/EmptyState";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Card, CardContent } from "@/components/ui/card";
-import { Skeleton } from "@/components/ui/skeleton";
-import { Badge } from "@/components/ui/badge";
-import {
-    Plus,
-    Search,
-    Users,
-    Shield,
-    ShieldCheck,
-    ShieldOff,
-    UserCog
-} from "lucide-react";
-import { toast } from "sonner";
+import { supabase } from "@/config/supabase";
 
 export default function UserManagement() {
     const [searchTerm, setSearchTerm] = useState("");
@@ -26,12 +9,26 @@ export default function UserManagement() {
     // Fetch users and employees
     const { data: users = [], isLoading: loadingUsers, isError: isUsersError, error: usersError } = useQuery({
         queryKey: ["users"],
-        queryFn: () => base44.entities.User.list(),
+        queryFn: async () => {
+            const { data, error } = await supabase
+                .from('users')
+                .select('*')
+                .order('created_at', { ascending: false });
+            if (error) throw error;
+            return data;
+        },
     });
 
     const { data: employees = [], isLoading: loadingEmployees, isError: isEmployeesError, error: employeesError } = useQuery({
         queryKey: ["employees"],
-        queryFn: () => base44.entities.Employee.list(),
+        queryFn: async () => {
+            const { data, error } = await supabase
+                .from('employees')
+                .select('*')
+                .order('created_at', { ascending: false });
+            if (error) throw error;
+            return data;
+        },
     });
 
     if (isUsersError) console.error("Error fetching users:", usersError);
@@ -39,7 +36,16 @@ export default function UserManagement() {
 
     // Toggle user active status
     const toggleStatusMutation = useMutation({
-        mutationFn: ({ id, isActive }) => base44.entities.User.update(id, { is_active: !isActive }),
+        mutationFn: async ({ id, isActive }) => {
+            const { data, error } = await supabase
+                .from('users')
+                .update({ is_active: !isActive })
+                .eq('id', id)
+                .select()
+                .single();
+            if (error) throw error;
+            return data;
+        },
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ["users"] });
             toast.success("User status updated successfully");
