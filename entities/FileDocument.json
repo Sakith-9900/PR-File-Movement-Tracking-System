@@ -1,0 +1,43 @@
+{
+  "name": "FileDocument",
+  "type": "object",
+  "properties": {
+    "pr_file_id": {
+      "type": "string",
+      "description": "Reference to PRFile"
+    },
+    "pr_number": {
+      "type": "string",
+      "description": "PR number for reference"
+    },
+    "assignment_id": {
+      "type": "string",
+      "description": "Reference to FileAssignment if uploaded during assignment"
+    },
+    "document_name": {
+      "type": "string",
+      "description": "Name of the document"
+    },
+    "document_url": {
+      "type": "string",
+      "description": "URL of uploaded document"
+    },
+    "document_type": {
+      "type": "string",
+      "description": "Type of document"
+    },
+    "uploaded_by_code": {
+      "type": "string",
+      "description": "Short code of uploader"
+    },
+    "remarks": {
+      "type": "string",
+      "description": "Document remarks"
+    }
+  },
+  "required": [
+    "pr_file_id",
+    "document_name",
+    "document_url"
+  ]
+}
