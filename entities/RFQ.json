@@ -1,0 +1,46 @@
+{
+  "name": "RFQ",
+  "type": "object",
+  "properties": {
+    "rfq_number": {
+      "type": "string",
+      "description": "Auto-generated RFQ number"
+    },
+    "rfq_date": {
+      "type": "string",
+      "format": "date",
+      "description": "Date of RFQ creation"
+    },
+    "pr_file_id": {
+      "type": "string",
+      "description": "Reference to PRFile/Contract"
+    },
+    "pr_number": {
+      "type": "string",
+      "description": "PR number for reference"
+    },
+    "contract_name": {
+      "type": "string",
+      "description": "Contract name"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "Open",
+        "In Progress",
+        "Completed",
+        "Cancelled"
+      ],
+      "default": "Open"
+    },
+    "remarks": {
+      "type": "string",
+      "description": "RFQ remarks"
+    }
+  },
+  "required": [
+    "rfq_number",
+    "rfq_date",
+    "pr_file_id"
+  ]
+}
