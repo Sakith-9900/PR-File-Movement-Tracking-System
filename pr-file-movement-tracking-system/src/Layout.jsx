@@ -16,7 +16,7 @@ import {
   ChevronRight,
   LogOut
 } from "lucide-react";
-import { base44 } from "@/api/base44Client";
+import { base44 } from "@/api/Client";
 
 const navigation = [
   { name: "Dashboard", href: "Dashboard", icon: LayoutDashboard },
