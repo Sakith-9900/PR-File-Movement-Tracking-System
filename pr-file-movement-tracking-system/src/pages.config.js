@@ -54,6 +54,7 @@ import PRFileDetails from './pages/PRFileDetails';
 import MyAssignments from './pages/MyAssignments';
 import MasterSheet from './pages/MasterSheet';
 import Reports from './pages/Reports';
+import UserManagement from './pages/UserManagement';
 import __Layout from './Layout.jsx';
 
 
@@ -65,6 +66,7 @@ export const PAGES = {
     "MyAssignments": MyAssignments,
     "MasterSheet": MasterSheet,
     "Reports": Reports,
+    "UserManagement": UserManagement,
 }
 
 export const pagesConfig = {
