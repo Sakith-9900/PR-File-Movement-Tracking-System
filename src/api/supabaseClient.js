@@ -12,7 +12,7 @@ const createEntity = (tableName) => ({
   list: async (orderBy = '-created_at') => {
     const isDescending = orderBy.startsWith('-');
     const column = isDescending ? orderBy.slice(1) : orderBy;
-    
+
     return handleResponse(
       supabase
         .from(tableName)
@@ -23,11 +23,11 @@ const createEntity = (tableName) => ({
 
   filter: async (filters) => {
     let query = supabase.from(tableName).select('*');
-    
+
     Object.entries(filters).forEach(([key, value]) => {
       query = query.eq(key, value);
     });
-    
+
     return handleResponse(query);
   },
 
@@ -84,4 +84,24 @@ export const supabaseClient = {
     AuditLog: createEntity('audit_logs'),
     User: createEntity('users'),
   },
+  // Add auth namespace for compatibility
+  auth: {
+    logout: async () => {
+      const { error } = await supabase.auth.signOut();
+      if (error) throw error;
+      window.location.href = '/login';
+    },
+    getCurrentUser: async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      return user;
+    }
+  },
+  // Add appLogs namespace for NavigationTracker compatibility
+  appLogs: {
+    logUserInApp: async (pageName) => {
+      console.log(`[Analytics] User visited: ${pageName}`);
+      // Optional: Insert into audit_logs or a dedicated analytics table
+      return Promise.resolve();
+    }
+  }
 };
