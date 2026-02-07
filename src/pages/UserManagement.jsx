@@ -24,15 +24,18 @@ export default function UserManagement() {
     const queryClient = useQueryClient();
 
     // Fetch users and employees
-    const { data: users = [], isLoading: loadingUsers } = useQuery({
+    const { data: users = [], isLoading: loadingUsers, isError: isUsersError, error: usersError } = useQuery({
         queryKey: ["users"],
         queryFn: () => base44.entities.User.list(),
     });
 
-    const { data: employees = [], isLoading: loadingEmployees } = useQuery({
+    const { data: employees = [], isLoading: loadingEmployees, isError: isEmployeesError, error: employeesError } = useQuery({
         queryKey: ["employees"],
         queryFn: () => base44.entities.Employee.list(),
     });
+
+    if (isUsersError) console.error("Error fetching users:", usersError);
+    if (isEmployeesError) console.error("Error fetching employees:", employeesError);
 
     // Toggle user active status
     const toggleStatusMutation = useMutation({
@@ -69,6 +72,21 @@ export default function UserManagement() {
                 <div className="space-y-4">
                     {[1, 2, 3, 4, 5].map(i => <Skeleton key={i} className="h-24 rounded-xl" />)}
                 </div>
+            </div>
+        );
+    }
+
+    if (isUsersError || isEmployeesError) {
+        return (
+            <div className="p-4 sm:p-6 lg:p-8 max-w-7xl mx-auto text-center py-20">
+                <ShieldOff className="w-16 h-16 mx-auto text-red-300 mb-4" />
+                <h2 className="text-xl font-semibold text-slate-900 mb-2">Failed to load data</h2>
+                <p className="text-slate-500 mb-4">
+                    {isUsersError ? `Users: ${usersError?.message}` : ""}
+                    <br />
+                    {isEmployeesError ? `Employees: ${employeesError?.message}` : ""}
+                </p>
+                <Button onClick={() => window.location.reload()}>Retry</Button>
             </div>
         );
     }
