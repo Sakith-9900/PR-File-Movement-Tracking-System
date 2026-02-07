@@ -1,6 +1,23 @@
 import React, { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/config/supabase";
+import PageHeader from "@/components/common/PageHeader";
+import EmptyState from "@/components/common/EmptyState";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Card, CardContent } from "@/components/ui/card";
+import { Skeleton } from "@/components/ui/skeleton";
+import { Badge } from "@/components/ui/badge";
+import {
+    Plus,
+    Search,
+    Users,
+    Shield,
+    ShieldCheck,
+    ShieldOff,
+    UserCog
+} from "lucide-react";
+import { toast } from "sonner";
 
 export default function UserManagement() {
     const [searchTerm, setSearchTerm] = useState("");
