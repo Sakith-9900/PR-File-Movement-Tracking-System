@@ -15,6 +15,43 @@ export const AuthProvider = ({ children }) => {
     checkAppState();
   }, []);
 
+  const syncUserToPublicTable = async (authUser) => {
+    if (!authUser) return;
+    try {
+      // Check if user exists in public.users
+      const { data: existingUser, error: fetchError } = await supabase
+        .from('users')
+        .select('id')
+        .eq('id', authUser.id)
+        .single();
+
+      // PGRST116 is "Row not found" - this is expected if user is new
+      if (fetchError && fetchError.code !== 'PGRST116') {
+        console.error("Error checking user existence:", fetchError);
+        return;
+      }
+
+      if (!existingUser) {
+        // Create public user record if not exists
+        const { error: insertError } = await supabase.from('users').insert({
+          id: authUser.id,
+          email: authUser.email,
+          short_code: authUser.email.split('@')[0].toUpperCase(), // Default short code
+          is_active: true,
+          created_at: new Date().toISOString()
+        });
+
+        if (insertError) {
+          console.error("Failed to sync user to public table:", insertError);
+        } else {
+          console.log("User synced to public table successfully");
+        }
+      }
+    } catch (err) {
+      console.error("Unexpected error syncing user:", err);
+    }
+  };
+
   const checkAppState = async () => {
     try {
       setIsLoadingAuth(true);
@@ -37,6 +74,8 @@ export const AuthProvider = ({ children }) => {
       if (session?.user) {
         setUser(session.user);
         setIsAuthenticated(true);
+        // Sync user directly using supabase client
+        syncUserToPublicTable(session.user);
       } else {
         setUser(null);
         setIsAuthenticated(false);
@@ -83,6 +122,7 @@ export const AuthProvider = ({ children }) => {
         if (session?.user) {
           setUser(session.user);
           setIsAuthenticated(true);
+          syncUserToPublicTable(session.user);
         } else {
           setUser(null);
           setIsAuthenticated(false);
@@ -142,3 +182,4 @@ export const useAuth = () => {
   }
   return context;
 };
+
