@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { base44 } from "@/api/Client";
+import { base44 } from "@/api/base44Client";
 import { Link } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import { format } from "date-fns";
@@ -48,12 +48,26 @@ export default function MasterSheet() {
     queryFn: () => base44.entities.FileAssignment.list(),
   });
 
+  const { data: rfqs = [] } = useQuery({
+    queryKey: ["rfqs"],
+    queryFn: () => base44.entities.RFQ.list(),
+  });
+
+  const { data: pos = [] } = useQuery({
+    queryKey: ["pos"],
+    queryFn: () => base44.entities.PO.list(),
+  });
+
   // Get assignment history for each file
   const getFileAssignments = (fileId) => {
     return assignments
       .filter(a => a.pr_file_id === fileId)
       .sort((a, b) => (a.sequence_number || 0) - (b.sequence_number || 0));
   };
+
+  // Get RFQ/PO numbers for each file
+  const getFileRFQs = (fileId) => rfqs.filter(r => r.pr_file_id === fileId);
+  const getFilePOs = (fileId) => pos.filter(p => p.pr_file_id === fileId);
 
   // Filter and sort
   const filteredFiles = prFiles
@@ -78,14 +92,20 @@ export default function MasterSheet() {
     });
 
   const exportToCSV = () => {
-    const headers = ["PR Number", "PR Date", "Contract Name", "Status", "Priority", "Current Holder", "Assignment History"];
+    const headers = ["PR Number", "PR Date", "Contract Name", "RFQ Numbers", "PO Numbers", "Status", "Priority", "Current Holder", "Assignment History"];
     const rows = filteredFiles.map(file => {
       const fileAssignments = getFileAssignments(file.id);
+      const fileRFQs = getFileRFQs(file.id);
+      const filePOs = getFilePOs(file.id);
       const history = fileAssignments.map(a => `${a.employee_code}(${a.status})`).join(" → ");
+      const rfqNumbers = fileRFQs.map(r => r.rfq_number).join(", ");
+      const poNumbers = filePOs.map(p => p.po_number).join(", ");
       return [
         file.pr_number,
         file.pr_date,
         file.contract_name,
+        rfqNumbers || "N/A",
+        poNumbers || "N/A",
         file.status,
         file.priority,
         file.current_holder_code || "N/A",
@@ -183,6 +203,8 @@ export default function MasterSheet() {
                   </div>
                 </TableHead>
                 <TableHead>Contract Name</TableHead>
+                <TableHead>RFQ Numbers</TableHead>
+                <TableHead>PO Numbers</TableHead>
                 <TableHead 
                   className="cursor-pointer hover:bg-slate-100"
                   onClick={() => toggleSort("status")}
@@ -201,18 +223,42 @@ export default function MasterSheet() {
             <TableBody>
               {filteredFiles.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={8} className="text-center py-12 text-slate-500">
+                  <TableCell colSpan={10} className="text-center py-12 text-slate-500">
                     No PR files found
                   </TableCell>
                 </TableRow>
               ) : (
                 filteredFiles.map(file => {
                   const fileAssignments = getFileAssignments(file.id);
+                  const fileRFQs = getFileRFQs(file.id);
+                  const filePOs = getFilePOs(file.id);
                   return (
                     <TableRow key={file.id} className="hover:bg-slate-50">
                       <TableCell className="font-medium">{file.pr_number}</TableCell>
                       <TableCell>{format(new Date(file.pr_date), "MMM d, yyyy")}</TableCell>
                       <TableCell className="max-w-[200px] truncate">{file.contract_name}</TableCell>
+                      <TableCell>
+                        {fileRFQs.length > 0 ? (
+                          <div className="space-y-1">
+                            {fileRFQs.map(rfq => (
+                              <div key={rfq.id} className="text-xs font-medium">{rfq.rfq_number}</div>
+                            ))}
+                          </div>
+                        ) : (
+                          <span className="text-slate-400 text-xs">—</span>
+                        )}
+                      </TableCell>
+                      <TableCell>
+                        {filePOs.length > 0 ? (
+                          <div className="space-y-1">
+                            {filePOs.map(po => (
+                              <div key={po.id} className="text-xs font-medium">{po.po_number}</div>
+                            ))}
+                          </div>
+                        ) : (
+                          <span className="text-slate-400 text-xs">—</span>
+                        )}
+                      </TableCell>
                       <TableCell><StatusBadge status={file.status} /></TableCell>
                       <TableCell><StatusBadge status={file.priority} /></TableCell>
                       <TableCell>
