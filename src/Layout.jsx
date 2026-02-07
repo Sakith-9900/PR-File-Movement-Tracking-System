@@ -16,7 +16,6 @@ import {
   ChevronRight,
   LogOut
 } from "lucide-react";
-import { base44 } from "@/api/Client";
 import { useAuth } from "@/lib/AuthContext";
 
 const navigation = [
