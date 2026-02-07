@@ -54,6 +54,7 @@ import PRFileDetails from './pages/PRFileDetails';
 import MyAssignments from './pages/MyAssignments';
 import MasterSheet from './pages/MasterSheet';
 import Reports from './pages/Reports';
+import __Layout from './Layout.jsx';
 
 
 export const PAGES = {
@@ -69,4 +70,5 @@ export const PAGES = {
 export const pagesConfig = {
     mainPage: "Dashboard",
     Pages: PAGES,
+    Layout: __Layout,
 };
