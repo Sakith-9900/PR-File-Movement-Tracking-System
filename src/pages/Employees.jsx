@@ -17,7 +17,7 @@ export default function Employees() {
   const [searchTerm, setSearchTerm] = useState("");
   const queryClient = useQueryClient();
 
-  const { data: employees = [], isLoading } = useQuery({
+  const { data: employees = [], isLoading, isError, error } = useQuery({
     queryKey: ["employees"],
     queryFn: () => base44.entities.Employee.list(),
   });
@@ -54,7 +54,7 @@ export default function Employees() {
     setIsFormOpen(true);
   };
 
-  const filteredEmployees = employees.filter(emp => 
+  const filteredEmployees = employees.filter(emp =>
     emp.full_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
     emp.short_code?.toLowerCase().includes(searchTerm.toLowerCase()) ||
     emp.employee_id?.toLowerCase().includes(searchTerm.toLowerCase())
@@ -71,10 +71,21 @@ export default function Employees() {
     );
   }
 
+  if (isError) {
+    return (
+      <div className="p-4 sm:p-6 lg:p-8 max-w-7xl mx-auto text-center py-20">
+        <Users className="w-16 h-16 mx-auto text-red-300 mb-4" />
+        <h2 className="text-xl font-semibold text-slate-900 mb-2">Failed to load employees</h2>
+        <p className="text-slate-500 mb-4">{error?.message}</p>
+        <Button onClick={() => window.location.reload()}>Retry</Button>
+      </div>
+    );
+  }
+
   return (
     <div className="p-4 sm:p-6 lg:p-8 max-w-7xl mx-auto">
-      <PageHeader 
-        title="Employees" 
+      <PageHeader
+        title="Employees"
         subtitle="Manage employee directory and short codes"
       >
         <Button onClick={() => { setSelectedEmployee(null); setIsFormOpen(true); }}>
@@ -112,9 +123,9 @@ export default function Employees() {
       ) : (
         <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
           {filteredEmployees.map(employee => (
-            <EmployeeCard 
-              key={employee.id} 
-              employee={employee} 
+            <EmployeeCard
+              key={employee.id}
+              employee={employee}
               onEdit={handleEdit}
             />
           ))}
