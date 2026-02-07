@@ -1,0 +1,28 @@
+{
+  "name": "User",
+  "type": "object",
+  "properties": {
+    "short_code": {
+      "type": "string",
+      "description": "Short code for employee (e.g., ABC, JKS)"
+    },
+    "password": {
+      "type": "string",
+      "description": "User password (hashed)"
+    },
+    "employee_id": {
+      "type": "string",
+      "description": "Link to Employee record"
+    },
+    "is_active": {
+      "type": "boolean",
+      "default": true,
+      "description": "Whether user account is active"
+    }
+  },
+  "required": [
+    "short_code",
+    "password",
+    "employee_id"
+  ]
+}
