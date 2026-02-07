@@ -93,6 +93,27 @@ export const AuthProvider = ({ children }) => {
     return () => subscription.unsubscribe();
   }, []);
 
+  const signIn = async (email, password) => {
+    const { data, error } = await supabase.auth.signInWithPassword({
+      email,
+      password,
+    });
+    if (error) throw error;
+    return data;
+  };
+
+  const signUp = async (email, password, metadata = {}) => {
+    const { data, error } = await supabase.auth.signUp({
+      email,
+      password,
+      options: {
+        data: metadata
+      }
+    });
+    if (error) throw error;
+    return data;
+  };
+
   return (
     <AuthContext.Provider value={{
       user,
@@ -101,6 +122,9 @@ export const AuthProvider = ({ children }) => {
       isLoadingPublicSettings,
       authError,
       appPublicSettings,
+      login: signIn, // Alias for backward compatibility if needed, though mostly using signIn directly
+      signIn,
+      signUp,
       logout,
       navigateToLogin,
       checkAppState,
