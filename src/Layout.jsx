@@ -4,10 +4,10 @@ import { createPageUrl } from "@/utils";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { 
-  LayoutDashboard, 
-  FileText, 
-  Users, 
+import {
+  LayoutDashboard,
+  FileText,
+  Users,
   ClipboardList,
   BarChart3,
   Table2,
@@ -17,6 +17,7 @@ import {
   LogOut
 } from "lucide-react";
 import { base44 } from "@/api/Client";
+import { useAuth } from "@/lib/AuthContext";
 
 const navigation = [
   { name: "Dashboard", href: "Dashboard", icon: LayoutDashboard },
@@ -30,16 +31,17 @@ const navigation = [
 
 export default function Layout({ children, currentPageName }) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const { logout } = useAuth();
 
   const handleLogout = () => {
-    base44.auth.logout();
+    logout();
   };
 
   return (
     <div className="min-h-screen bg-slate-50">
       {/* Mobile sidebar backdrop */}
       {sidebarOpen && (
-        <div 
+        <div
           className="fixed inset-0 bg-black/50 z-40 lg:hidden"
           onClick={() => setSidebarOpen(false)}
         />
@@ -81,8 +83,8 @@ export default function Layout({ children, currentPageName }) {
                     onClick={() => setSidebarOpen(false)}
                     className={cn(
                       "flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all",
-                      isActive 
-                        ? "bg-blue-50 text-blue-700" 
+                      isActive
+                        ? "bg-blue-50 text-blue-700"
                         : "text-slate-600 hover:bg-slate-100 hover:text-slate-900"
                     )}
                   >
@@ -102,8 +104,8 @@ export default function Layout({ children, currentPageName }) {
 
           {/* Footer */}
           <div className="p-4 border-t border-slate-200">
-            <Button 
-              variant="ghost" 
+            <Button
+              variant="ghost"
               className="w-full justify-start text-slate-600 hover:text-slate-900"
               onClick={handleLogout}
             >
