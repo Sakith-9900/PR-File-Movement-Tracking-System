@@ -26,27 +26,23 @@ export default function RFQPOSection({ prFile, rfqs = [], pos = [] }) {
   });
   const queryClient = useQueryClient();
 
-  const generateRFQNumber = () => {
-    const year = new Date().getFullYear();
-    const existingNumbers = rfqs
-      .filter(r => r.rfq_number?.startsWith(`RFQ-${year}`))
-      .map(r => parseInt(r.rfq_number.split("-")[2]) || 0);
-    const nextNum = Math.max(0, ...existingNumbers) + 1;
-    return `RFQ-${year}-${String(nextNum).padStart(4, "0")}`;
-  };
 
-  const generatePONumber = () => {
-    const year = new Date().getFullYear();
-    const existingNumbers = pos
-      .filter(p => p.po_number?.startsWith(`PO-${year}`))
-      .map(p => parseInt(p.po_number.split("-")[2]) || 0);
-    const nextNum = Math.max(0, ...existingNumbers) + 1;
-    return `PO-${year}-${String(nextNum).padStart(4, "0")}`;
-  };
 
   const createRFQMutation = useMutation({
     mutationFn: async (data) => {
-      const rfqNumber = generateRFQNumber();
+      const year = new Date().getFullYear();
+      const latestNumber = await base44.entities.RFQ.getLatestNumber(year);
+
+      let nextNum = 1;
+      if (latestNumber) {
+        const parts = latestNumber.split('-');
+        if (parts.length === 3) {
+          nextNum = parseInt(parts[2]) + 1;
+        }
+      }
+
+      const rfqNumber = `RFQ-${year}-${String(nextNum).padStart(4, "0")}`;
+
       const rfq = await base44.entities.RFQ.create({
         rfq_number: rfqNumber,
         rfq_date: data.rfq_date,
@@ -82,7 +78,19 @@ export default function RFQPOSection({ prFile, rfqs = [], pos = [] }) {
         throw new Error("Please select an RFQ first");
       }
 
-      const poNumber = generatePONumber();
+      const year = new Date().getFullYear();
+      const latestNumber = await base44.entities.PO.getLatestNumber(year);
+
+      let nextNum = 1;
+      if (latestNumber) {
+        const parts = latestNumber.split('-');
+        if (parts.length === 3) {
+          nextNum = parseInt(parts[2]) + 1;
+        }
+      }
+
+      const poNumber = `PO-${year}-${String(nextNum).padStart(4, "0")}`;
+
       const po = await base44.entities.PO.create({
         po_number: poNumber,
         po_date: data.po_date,
@@ -155,8 +163,8 @@ export default function RFQPOSection({ prFile, rfqs = [], pos = [] }) {
         <CardHeader>
           <div className="flex items-center justify-between">
             <CardTitle className="text-base">PO Numbers</CardTitle>
-            <Button 
-              size="sm" 
+            <Button
+              size="sm"
               onClick={() => setIsPODialogOpen(true)}
               disabled={rfqs.length === 0}
             >
@@ -199,7 +207,9 @@ export default function RFQPOSection({ prFile, rfqs = [], pos = [] }) {
           <form onSubmit={(e) => { e.preventDefault(); createRFQMutation.mutate(rfqData); }} className="space-y-4">
             <div className="space-y-2">
               <Label>RFQ Number</Label>
-              <Input value={generateRFQNumber()} disabled />
+              <div className="p-2 bg-slate-100 rounded text-slate-500 text-sm">
+                Generated automatically upon creation (Global Sequence)
+              </div>
             </div>
             <div className="space-y-2">
               <Label htmlFor="rfq_date">RFQ Date *</Label>
@@ -258,7 +268,9 @@ export default function RFQPOSection({ prFile, rfqs = [], pos = [] }) {
             </div>
             <div className="space-y-2">
               <Label>PO Number</Label>
-              <Input value={generatePONumber()} disabled />
+              <div className="p-2 bg-slate-100 rounded text-slate-500 text-sm">
+                Generated automatically upon creation (Global Sequence)
+              </div>
             </div>
             <div className="space-y-2">
               <Label htmlFor="po_date">PO Date *</Label>
