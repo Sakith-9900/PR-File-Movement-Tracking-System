@@ -16,7 +16,7 @@ import {
   ChevronRight,
   LogOut
 } from "lucide-react";
-import { useAuth } from "@/lib/AuthContext";
+import { useAuth } from "@/contexts/AuthContext";
 
 const navigation = [
   { name: "Dashboard", href: "Dashboard", icon: LayoutDashboard },
