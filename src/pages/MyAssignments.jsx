@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { base44 } from "@/api/Client";
+import { supabase } from "@/config/supabase";
 import { Link } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import { format } from "date-fns";
@@ -40,17 +40,36 @@ export default function MyAssignments() {
 
   const { data: employees = [], isLoading: loadingEmployees } = useQuery({
     queryKey: ["employees"],
-    queryFn: () => base44.entities.Employee.list(),
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('employees')
+        .select('*');
+      if (error) throw error;
+      return data;
+    },
   });
 
   const { data: allAssignments = [], isLoading: loadingAssignments } = useQuery({
     queryKey: ["allAssignments"],
-    queryFn: () => base44.entities.FileAssignment.list("-created_date"),
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('file_assignments')
+        .select('*')
+        .order('created_at', { ascending: false });
+      if (error) throw error;
+      return data;
+    },
   });
 
   const { data: prFiles = [] } = useQuery({
     queryKey: ["prFiles"],
-    queryFn: () => base44.entities.PRFile.list(),
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('pr_files')
+        .select('*');
+      if (error) throw error;
+      return data;
+    },
   });
 
   // Filter assignments by selected employee
@@ -67,18 +86,20 @@ export default function MyAssignments() {
   const startWorkMutation = useMutation({
     mutationFn: async (assignmentId) => {
       const assignment = allAssignments.find(a => a.id === assignmentId);
-      await base44.entities.FileAssignment.update(assignmentId, {
-        status: "In Progress",
-        start_date: new Date().toISOString(),
-      });
+      const { error: updateError } = await supabase
+        .from('file_assignments')
+        .update({
+          status: "In Progress",
+          start_date: new Date().toISOString(),
+        })
+        .eq('id', assignmentId);
+      if (updateError) throw updateError;
 
-      await base44.entities.AuditLog.create({
+      await supabase.from('audit_logs').insert({
         pr_file_id: assignment.pr_file_id,
         pr_number: assignment.pr_number,
         action: `Work started by ${assignment.employee_code}`,
-        action_type: "Started",
-        performed_by_code: assignment.employee_code,
-        performed_by_name: assignment.employee_name,
+        details: `Started by ${assignment.employee_name}`,
       });
     },
     onSuccess: () => {
@@ -97,16 +118,20 @@ export default function MyAssignments() {
       const assignment = allAssignments.find(a => a.id === assignmentId);
 
       // Update assignment
-      await base44.entities.FileAssignment.update(assignmentId, {
-        status: "Completed",
-        end_date: new Date().toISOString(),
-        work_remarks: data.remarks,
-      });
+      const { error: updateError } = await supabase
+        .from('file_assignments')
+        .update({
+          status: "Completed",
+          end_date: new Date().toISOString(),
+          work_remarks: data.remarks,
+        })
+        .eq('id', assignmentId);
+      if (updateError) throw updateError;
 
       // Upload documents if any
       if (data.documents && data.documents.length > 0) {
         for (const doc of data.documents) {
-          await base44.entities.FileDocument.create({
+          await supabase.from('file_documents').insert({
             pr_file_id: assignment.pr_file_id,
             pr_number: assignment.pr_number,
             assignment_id: assignmentId,
@@ -118,20 +143,21 @@ export default function MyAssignments() {
       }
 
       // Update PR file status
-      await base44.entities.PRFile.update(assignment.pr_file_id, {
-        status: "Pending Review",
-        current_holder_id: null,
-        current_holder_code: null,
-      });
+      const { error: prError } = await supabase
+        .from('pr_files')
+        .update({
+          status: "Pending Review",
+          current_holder_id: null,
+          current_holder_code: null,
+        })
+        .eq('id', assignment.pr_file_id);
+      if (prError) throw prError;
 
       // Create audit log
-      await base44.entities.AuditLog.create({
+      await supabase.from('audit_logs').insert({
         pr_file_id: assignment.pr_file_id,
         pr_number: assignment.pr_number,
         action: `Work completed by ${assignment.employee_code}`,
-        action_type: "Completed",
-        performed_by_code: assignment.employee_code,
-        performed_by_name: assignment.employee_name,
         details: data.remarks,
       });
     },

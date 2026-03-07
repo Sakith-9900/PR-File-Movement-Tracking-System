@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { base44 } from "@/api/Client";
+import { supabase } from "@/config/supabase";
 import { format, differenceInDays, startOfMonth, endOfMonth, isWithinInterval } from "date-fns";
 import PageHeader from "@/components/common/PageHeader";
 import StatCard from "@/components/common/StatCard";
@@ -36,17 +36,29 @@ export default function Reports() {
 
   const { data: prFiles = [], isLoading: loadingFiles } = useQuery({
     queryKey: ["prFiles"],
-    queryFn: () => base44.entities.PRFile.list(),
+    queryFn: async () => {
+      const { data, error } = await supabase.from('pr_files').select('*');
+      if (error) throw error;
+      return data;
+    },
   });
 
   const { data: employees = [] } = useQuery({
     queryKey: ["employees"],
-    queryFn: () => base44.entities.Employee.list(),
+    queryFn: async () => {
+      const { data, error } = await supabase.from('employees').select('*');
+      if (error) throw error;
+      return data;
+    },
   });
 
   const { data: assignments = [] } = useQuery({
     queryKey: ["assignments"],
-    queryFn: () => base44.entities.FileAssignment.list(),
+    queryFn: async () => {
+      const { data, error } = await supabase.from('file_assignments').select('*');
+      if (error) throw error;
+      return data;
+    },
   });
 
   // Calculate stats

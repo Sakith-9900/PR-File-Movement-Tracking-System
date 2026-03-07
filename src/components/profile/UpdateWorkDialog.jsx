@@ -12,7 +12,7 @@ import {
   DialogFooter,
 } from "@/components/ui/dialog";
 import { Loader2, Upload, FileIcon, X, Play, CheckCircle } from "lucide-react";
-import { base44 } from "@/api/Client";
+import { supabase } from "@/config/supabase";
 import { toast } from "sonner";
 
 export default function UpdateWorkDialog({ 
@@ -35,14 +35,35 @@ export default function UpdateWorkDialog({
   const handleFileSelect = async (e) => {
     const selectedFiles = Array.from(e.target.files);
     setUploading(true);
-    
-    for (const file of selectedFiles) {
-      const { file_url } = await base44.integrations.Core.UploadFile({ file });
-      setFiles(prev => [...prev, { name: file.name, url: file_url }]);
+
+    try {
+      for (const file of selectedFiles) {
+        // Generate unique file path
+        const timestamp = Date.now();
+        const filePath = `pr-documents/${assignment.pr_file_id}/${timestamp}-${file.name}`;
+
+        // Upload to Supabase Storage
+        const { data, error: uploadError } = await supabase.storage
+          .from('documents')
+          .upload(filePath, file);
+
+        if (uploadError) throw uploadError;
+
+        // Get public URL
+        const { data: { publicUrl } } = supabase.storage
+          .from('documents')
+          .getPublicUrl(filePath);
+
+        setFiles(prev => [...prev, { name: file.name, url: publicUrl }]);
+      }
+
+      setUploading(false);
+      toast.success("File(s) uploaded successfully");
+    } catch (error) {
+      setUploading(false);
+      console.error("Upload error:", error);
+      toast.error(`Upload failed: ${error.message}`);
     }
-    
-    setUploading(false);
-    toast.success("File(s) uploaded successfully");
   };
 
   const removeFile = (index) => {

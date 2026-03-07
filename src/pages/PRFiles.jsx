@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { base44 } from "@/api/Client";
+import { supabase } from "@/config/supabase";
 import { format } from "date-fns";
 import PageHeader from "@/components/common/PageHeader";
 import EmptyState from "@/components/common/EmptyState";
@@ -22,19 +22,39 @@ export default function PRFiles() {
   const [statusFilter, setStatusFilter] = useState("all");
   const queryClient = useQueryClient();
 
-  const { data: prFiles = [], isLoading: loadingFiles } = useQuery({
+  // FIX: Added isFetching to catch background refetches after a new file is created
+  const { data: prFiles = [], isLoading: loadingFiles, isFetching: fetchingFiles } = useQuery({
     queryKey: ["prFiles"],
-    queryFn: () => base44.entities.PRFile.list("-created_date"),
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('pr_files')
+        .select('*')
+        .order('created_at', { ascending: false });
+      if (error) throw error;
+      return data;
+    },
   });
 
-  const { data: employees = [], isLoading: loadingEmployees } = useQuery({
+  const { data: employees = [], isLoading: loadingEmployees, isFetching: fetchingEmployees } = useQuery({
     queryKey: ["employees"],
-    queryFn: () => base44.entities.Employee.list(),
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('employees')
+        .select('*');
+      if (error) throw error;
+      return data;
+    },
   });
 
   const { data: assignments = [] } = useQuery({
     queryKey: ["assignments"],
-    queryFn: () => base44.entities.FileAssignment.list(),
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('file_assignments')
+        .select('*');
+      if (error) throw error;
+      return data;
+    },
   });
 
   // Generate next PR number
@@ -49,16 +69,18 @@ export default function PRFiles() {
 
   const createMutation = useMutation({
     mutationFn: async (data) => {
-      const prFile = await base44.entities.PRFile.create({
-        ...data,
-        status: "Open",
-      });
+      const { data: prFile, error } = await supabase
+        .from('pr_files')
+        .insert({ ...data, status: "Open" })
+        .select()
+        .single();
+      if (error) throw error;
+
       // Create audit log
-      await base44.entities.AuditLog.create({
+      await supabase.from('audit_logs').insert({
         pr_file_id: prFile.id,
         pr_number: data.pr_number,
         action: `PR File ${data.pr_number} created`,
-        action_type: "Created",
         details: `Contract: ${data.contract_name}`,
       });
       return prFile;
@@ -80,32 +102,37 @@ export default function PRFiles() {
       const sequenceNumber = existingAssignments.length + 1;
 
       // Create assignment
-      await base44.entities.FileAssignment.create({
-        pr_file_id: prFile.id,
-        pr_number: prFile.pr_number,
-        employee_id: assignmentData.employee_id,
-        employee_code: assignmentData.employee_code,
-        employee_name: assignmentData.employee_name,
-        assignment_date: new Date().toISOString(),
-        status: "Assigned",
-        sequence_number: sequenceNumber,
-      });
+      const { error: assignError } = await supabase
+        .from('file_assignments')
+        .insert({
+          pr_file_id: prFile.id,
+          pr_number: prFile.pr_number,
+          employee_id: assignmentData.employee_id,
+          employee_code: assignmentData.employee_code,
+          employee_name: assignmentData.employee_name,
+          assignment_date: new Date().toISOString(),
+          status: "Assigned",
+          sequence_number: sequenceNumber,
+        });
+      if (assignError) throw assignError;
 
       // Update PR file
-      await base44.entities.PRFile.update(prFile.id, {
-        current_holder_id: assignmentData.employee_id,
-        current_holder_code: assignmentData.employee_code,
-        status: "In Progress",
-      });
+      const { error: updateError } = await supabase
+        .from('pr_files')
+        .update({
+          current_holder_id: assignmentData.employee_id,
+          current_holder_code: assignmentData.employee_code,
+          status: "In Progress",
+        })
+        .eq('id', prFile.id);
+      if (updateError) throw updateError;
 
       // Create audit log
-      await base44.entities.AuditLog.create({
+      await supabase.from('audit_logs').insert({
         pr_file_id: prFile.id,
         pr_number: prFile.pr_number,
         action: `Assigned to ${assignmentData.employee_code}`,
-        action_type: "Assigned",
-        performed_by_code: assignmentData.employee_code,
-        performed_by_name: assignmentData.employee_name,
+        details: `Assigned by system`,
       });
     },
     onSuccess: () => {
@@ -142,7 +169,8 @@ export default function PRFiles() {
     return matchesSearch && matchesStatus;
   });
 
-  if (loadingFiles || loadingEmployees) {
+  // FIX: Added fetchingFiles and fetchingEmployees to the skeleton loader condition
+  if (loadingFiles || loadingEmployees || fetchingFiles || fetchingEmployees) {
     return (
       <div className="p-4 sm:p-6 lg:p-8 max-w-7xl mx-auto">
         <Skeleton className="h-10 w-48 mb-8" />

@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { base44 } from "@/api/Client";
+import { supabase } from "@/config/supabase";
 import { Link } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import { format } from "date-fns";
@@ -37,73 +37,127 @@ export default function PRFileDetails() {
 
   const { data: prFile, isLoading: loadingFile } = useQuery({
     queryKey: ["prFile", fileId],
-    queryFn: () => base44.entities.PRFile.filter({ id: fileId }).then(res => res[0]),
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('pr_files')
+        .select('*')
+        .eq('id', fileId)
+        .single();
+      if (error) throw error;
+      return data;
+    },
     enabled: !!fileId,
   });
 
   const { data: employees = [] } = useQuery({
     queryKey: ["employees"],
-    queryFn: () => base44.entities.Employee.list(),
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('employees')
+        .select('*');
+      if (error) throw error;
+      return data;
+    },
   });
 
   const { data: assignments = [], isLoading: loadingAssignments } = useQuery({
     queryKey: ["assignments", fileId],
-    queryFn: () => base44.entities.FileAssignment.filter({ pr_file_id: fileId }),
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('file_assignments')
+        .select('*')
+        .eq('pr_file_id', fileId);
+      if (error) throw error;
+      return data;
+    },
     enabled: !!fileId,
   });
 
   const { data: documents = [] } = useQuery({
     queryKey: ["documents", fileId],
-    queryFn: () => base44.entities.FileDocument.filter({ pr_file_id: fileId }),
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('file_documents')
+        .select('*')
+        .eq('pr_file_id', fileId);
+      if (error) throw error;
+      return data;
+    },
     enabled: !!fileId,
   });
 
   const { data: auditLogs = [] } = useQuery({
     queryKey: ["auditLogs", fileId],
-    queryFn: () => base44.entities.AuditLog.filter({ pr_file_id: fileId }),
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('audit_logs')
+        .select('*')
+        .eq('pr_file_id', fileId);
+      if (error) throw error;
+      return data;
+    },
     enabled: !!fileId,
   });
 
   const { data: rfqs = [] } = useQuery({
     queryKey: ["rfqs", fileId],
-    queryFn: () => base44.entities.RFQ.filter({ pr_file_id: fileId }),
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('rfqs')
+        .select('*')
+        .eq('pr_file_id', fileId);
+      if (error) throw error;
+      return data;
+    },
     enabled: !!fileId,
   });
 
   const { data: pos = [] } = useQuery({
     queryKey: ["pos", fileId],
-    queryFn: () => base44.entities.PO.filter({ pr_file_id: fileId }),
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('pos')
+        .select('*')
+        .eq('pr_file_id', fileId);
+      if (error) throw error;
+      return data;
+    },
     enabled: !!fileId,
   });
 
   const assignMutation = useMutation({
     mutationFn: async (assignmentData) => {
       const sequenceNumber = assignments.length + 1;
-      
-      await base44.entities.FileAssignment.create({
-        pr_file_id: prFile.id,
-        pr_number: prFile.pr_number,
-        employee_id: assignmentData.employee_id,
-        employee_code: assignmentData.employee_code,
-        employee_name: assignmentData.employee_name,
-        assignment_date: new Date().toISOString(),
-        status: "Assigned",
-        sequence_number: sequenceNumber,
-      });
 
-      await base44.entities.PRFile.update(prFile.id, {
-        current_holder_id: assignmentData.employee_id,
-        current_holder_code: assignmentData.employee_code,
-        status: "In Progress",
-      });
+      const { error: assignError } = await supabase
+        .from('file_assignments')
+        .insert({
+          pr_file_id: prFile.id,
+          pr_number: prFile.pr_number,
+          employee_id: assignmentData.employee_id,
+          employee_code: assignmentData.employee_code,
+          employee_name: assignmentData.employee_name,
+          assignment_date: new Date().toISOString(),
+          status: "Assigned",
+          sequence_number: sequenceNumber,
+        });
+      if (assignError) throw assignError;
 
-      await base44.entities.AuditLog.create({
+      const { error: updateError } = await supabase
+        .from('pr_files')
+        .update({
+          current_holder_id: assignmentData.employee_id,
+          current_holder_code: assignmentData.employee_code,
+          status: "In Progress",
+        })
+        .eq('id', prFile.id);
+      if (updateError) throw updateError;
+
+      await supabase.from('audit_logs').insert({
         pr_file_id: prFile.id,
         pr_number: prFile.pr_number,
         action: `Assigned to ${assignmentData.employee_code}`,
-        action_type: "Assigned",
-        performed_by_code: assignmentData.employee_code,
-        performed_by_name: assignmentData.employee_name,
+        details: `Assigned by system`,
       });
     },
     onSuccess: () => {
@@ -117,16 +171,20 @@ export default function PRFileDetails() {
 
   const closeMutation = useMutation({
     mutationFn: async () => {
-      await base44.entities.PRFile.update(prFile.id, {
-        status: "Closed",
-        closed_date: format(new Date(), "yyyy-MM-dd"),
-      });
+      const { error: updateError } = await supabase
+        .from('pr_files')
+        .update({
+          status: "Closed",
+          closed_date: format(new Date(), "yyyy-MM-dd"),
+        })
+        .eq('id', prFile.id);
+      if (updateError) throw updateError;
 
-      await base44.entities.AuditLog.create({
+      await supabase.from('audit_logs').insert({
         pr_file_id: prFile.id,
         pr_number: prFile.pr_number,
         action: "File closed",
-        action_type: "Closed",
+        details: "File marked as closed",
       });
     },
     onSuccess: () => {

@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { base44 } from "@/api/Client";
+import { supabase } from "@/config/supabase";
 import { Link } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import { format } from "date-fns";
@@ -40,22 +40,38 @@ export default function MasterSheet() {
 
   const { data: prFiles = [], isLoading: loadingFiles } = useQuery({
     queryKey: ["prFiles"],
-    queryFn: () => base44.entities.PRFile.list(),
+    queryFn: async () => {
+      const { data, error } = await supabase.from('pr_files').select('*');
+      if (error) throw error;
+      return data;
+    },
   });
 
   const { data: assignments = [] } = useQuery({
     queryKey: ["assignments"],
-    queryFn: () => base44.entities.FileAssignment.list(),
+    queryFn: async () => {
+      const { data, error } = await supabase.from('file_assignments').select('*');
+      if (error) throw error;
+      return data;
+    },
   });
 
   const { data: rfqs = [] } = useQuery({
     queryKey: ["rfqs"],
-    queryFn: () => base44.entities.RFQ.list(),
+    queryFn: async () => {
+      const { data, error } = await supabase.from('rfqs').select('*');
+      if (error) throw error;
+      return data;
+    },
   });
 
   const { data: pos = [] } = useQuery({
     queryKey: ["pos"],
-    queryFn: () => base44.entities.PO.list(),
+    queryFn: async () => {
+      const { data, error } = await supabase.from('pos').select('*');
+      if (error) throw error;
+      return data;
+    },
   });
 
   // Get assignment history for each file

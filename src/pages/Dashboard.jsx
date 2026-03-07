@@ -1,6 +1,6 @@
 import React from "react";
 import { useQuery } from "@tanstack/react-query";
-import { base44 } from "@/api/Client";
+import { supabase } from "@/config/supabase";
 import { Link } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import { format } from "date-fns";
@@ -25,17 +25,37 @@ import {
 export default function Dashboard() {
   const { data: prFiles = [], isLoading: loadingFiles } = useQuery({
     queryKey: ["prFiles"],
-    queryFn: () => base44.entities.PRFile.list("-created_date"),
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('pr_files')
+        .select('*')
+        .order('created_at', { ascending: false });
+      if (error) throw error;
+      return data;
+    },
   });
 
   const { data: employees = [], isLoading: loadingEmployees } = useQuery({
     queryKey: ["employees"],
-    queryFn: () => base44.entities.Employee.list(),
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('employees')
+        .select('*');
+      if (error) throw error;
+      return data;
+    },
   });
 
   const { data: assignments = [], isLoading: loadingAssignments } = useQuery({
     queryKey: ["assignments"],
-    queryFn: () => base44.entities.FileAssignment.list("-created_date"),
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('file_assignments')
+        .select('*')
+        .order('created_at', { ascending: false });
+      if (error) throw error;
+      return data;
+    },
   });
 
   const stats = {
