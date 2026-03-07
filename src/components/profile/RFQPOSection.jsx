@@ -7,8 +7,8 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
-import { Plus, FileText, Loader2, Calendar } from "lucide-react";
-import { format } from "date-fns";
+import { Plus, Loader2, Calendar } from "lucide-react";
+import { format, isValid } from "date-fns";
 import { toast } from "sonner";
 import StatusBadge from "@/components/common/StatusBadge";
 
@@ -26,13 +26,10 @@ export default function RFQPOSection({ prFile, rfqs = [], pos = [] }) {
   });
   const queryClient = useQueryClient();
 
-
-
   const createRFQMutation = useMutation({
     mutationFn: async (data) => {
       const year = new Date().getFullYear();
 
-      // Get latest RFQ number directly
       const { data: latestRFQs, error: fetchError } = await supabase
         .from('rfqs')
         .select('rfq_number')
@@ -43,8 +40,8 @@ export default function RFQPOSection({ prFile, rfqs = [], pos = [] }) {
       if (fetchError && fetchError.code !== 'PGRST116') throw fetchError;
 
       const latestNumber = latestRFQs?.[0]?.rfq_number;
-
       let nextNum = 1;
+      
       if (latestNumber) {
         const parts = latestNumber.split('-');
         if (parts.length === 3) {
@@ -58,21 +55,20 @@ export default function RFQPOSection({ prFile, rfqs = [], pos = [] }) {
         rfq_number: rfqNumber,
         rfq_date: data.rfq_date,
         pr_file_id: prFile.id,
-        pr_number: prFile.pr_number,
-        contract_name: prFile.contract_name,
         status: "Open",
         remarks: data.remarks,
       }).select().single();
 
       if (createError) throw createError;
 
-      await supabase.from('audit_logs').insert({
+      const { error: auditError } = await supabase.from('audit_logs').insert({
         pr_file_id: prFile.id,
-        pr_number: prFile.pr_number,
         action: `RFQ ${rfqNumber} created`,
-        action_type: "Created",
-        details: data.remarks,
+        performed_by: "System User", 
+        details: { remarks: data.remarks },
       });
+
+      if (auditError) console.error("Audit log error:", auditError);
 
       return rfq;
     },
@@ -83,17 +79,18 @@ export default function RFQPOSection({ prFile, rfqs = [], pos = [] }) {
       setIsRFQDialogOpen(false);
       setRfqData({ rfq_date: format(new Date(), "yyyy-MM-dd"), remarks: "" });
     },
+    onError: (error) => {
+      console.error("Failed to create RFQ:", error);
+      toast.error(`Error: ${error.message}`);
+    }
   });
 
   const createPOMutation = useMutation({
     mutationFn: async (data) => {
-      if (!selectedRFQ) {
-        throw new Error("Please select an RFQ first");
-      }
+      if (!selectedRFQ) throw new Error("Please select an RFQ first");
 
       const year = new Date().getFullYear();
 
-      // Get latest PO number directly
       const { data: latestPOs, error: fetchError } = await supabase
         .from('pos')
         .select('po_number')
@@ -104,8 +101,8 @@ export default function RFQPOSection({ prFile, rfqs = [], pos = [] }) {
       if (fetchError && fetchError.code !== 'PGRST116') throw fetchError;
 
       const latestNumber = latestPOs?.[0]?.po_number;
-
       let nextNum = 1;
+      
       if (latestNumber) {
         const parts = latestNumber.split('-');
         if (parts.length === 3) {
@@ -115,27 +112,25 @@ export default function RFQPOSection({ prFile, rfqs = [], pos = [] }) {
 
       const poNumber = `PO-${year}-${String(nextNum).padStart(4, "0")}`;
 
+      // Fixed: Removed rfq_id and rfq_number as they are not in your public.pos SQL table
       const { data: po, error: createError } = await supabase.from('pos').insert({
         po_number: poNumber,
         po_date: data.po_date,
-        rfq_id: selectedRFQ.id,
-        rfq_number: selectedRFQ.rfq_number,
         pr_file_id: prFile.id,
-        pr_number: prFile.pr_number,
-        contract_name: prFile.contract_name,
         status: "Open",
         remarks: data.remarks,
       }).select().single();
 
       if (createError) throw createError;
 
-      await supabase.from('audit_logs').insert({
+      const { error: auditError } = await supabase.from('audit_logs').insert({
         pr_file_id: prFile.id,
-        pr_number: prFile.pr_number,
         action: `PO ${poNumber} created (from ${selectedRFQ.rfq_number})`,
-        action_type: "Created",
-        details: data.remarks,
+        performed_by: "System User", 
+        details: { remarks: data.remarks, rfq_source: selectedRFQ.rfq_number },
       });
+      
+      if (auditError) console.error("Audit log error:", auditError);
 
       return po;
     },
@@ -147,7 +142,18 @@ export default function RFQPOSection({ prFile, rfqs = [], pos = [] }) {
       setPoData({ po_date: format(new Date(), "yyyy-MM-dd"), remarks: "" });
       setSelectedRFQ(null);
     },
+    onError: (error) => {
+      console.error("Failed to create PO:", error);
+      toast.error(`Error: ${error.message}`);
+    }
   });
+
+  // Helper function to safely format dates and avoid crashes
+  const safeFormatDate = (dateString) => {
+    if (!dateString) return "No date";
+    const date = new Date(dateString);
+    return isValid(date) ? format(date, "dd MMM yyyy") : "Invalid date";
+  };
 
   return (
     <div className="space-y-4">
@@ -173,7 +179,7 @@ export default function RFQPOSection({ prFile, rfqs = [], pos = [] }) {
                     <div className="font-medium text-sm">{rfq.rfq_number}</div>
                     <div className="text-xs text-slate-500 flex items-center gap-1 mt-1">
                       <Calendar className="w-3 h-3" />
-                      {format(new Date(rfq.rfq_date), "dd MMM yyyy")}
+                      {safeFormatDate(rfq.rfq_date)}
                     </div>
                   </div>
                   <StatusBadge status={rfq.status} />
@@ -212,9 +218,12 @@ export default function RFQPOSection({ prFile, rfqs = [], pos = [] }) {
                     <div className="font-medium text-sm">{po.po_number}</div>
                     <div className="text-xs text-slate-500 flex items-center gap-1 mt-1">
                       <Calendar className="w-3 h-3" />
-                      {format(new Date(po.po_date), "dd MMM yyyy")}
+                      {safeFormatDate(po.po_date)}
                     </div>
-                    <div className="text-xs text-slate-400 mt-1">From: {po.rfq_number}</div>
+                    {/* Only show 'From RFQ' if it exists in your data */}
+                    {po.rfq_number && (
+                      <div className="text-xs text-slate-400 mt-1">From: {po.rfq_number}</div>
+                    )}
                   </div>
                   <StatusBadge status={po.status} />
                 </div>
@@ -287,7 +296,7 @@ export default function RFQPOSection({ prFile, rfqs = [], pos = [] }) {
                 <option value="">Select an RFQ</option>
                 {rfqs.map(rfq => (
                   <option key={rfq.id} value={rfq.id}>
-                    {rfq.rfq_number} - {format(new Date(rfq.rfq_date), "dd MMM yyyy")}
+                    {rfq.rfq_number} - {safeFormatDate(rfq.rfq_date)}
                   </option>
                 ))}
               </select>

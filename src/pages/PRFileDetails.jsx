@@ -214,7 +214,7 @@ export default function PRFileDetails() {
                   <Calendar className="w-5 h-5 text-slate-400" />
                   <div>
                     <p className="text-xs text-slate-500">PR Date</p>
-                    <p className="font-medium text-slate-900">{format(new Date(prFile.pr_date), "MMM d, yyyy")}</p>
+                    <p className="font-medium text-slate-900">{prFile.pr_date ? format(new Date(prFile.pr_date), "MMM d, yyyy") : "Not set"}</p>
                   </div>
                 </div>
                 <div className="flex items-center gap-3 p-3 bg-slate-50 rounded-lg">
@@ -238,7 +238,7 @@ export default function PRFileDetails() {
                     <CheckCircle2 className="w-5 h-5 text-emerald-500" />
                     <div>
                       <p className="text-xs text-emerald-600">Closed Date</p>
-                      <p className="font-medium text-emerald-900">{format(new Date(prFile.closed_date), "MMM d, yyyy")}</p>
+                      <p className="font-medium text-emerald-900">{prFile.closed_date ? format(new Date(prFile.closed_date), "MMM d, yyyy") : "Not closed"}</p>
                     </div>
                   </div>
                 )}
@@ -324,11 +324,11 @@ export default function PRFileDetails() {
                 <p className="text-sm text-slate-500 text-center py-4">No activity recorded</p>
               ) : (
                 <div className="space-y-3 max-h-80 overflow-y-auto">
-                  {auditLogs.sort((a, b) => new Date(b.created_date) - new Date(a.created_date)).map(log => (
+                  {auditLogs.sort((a, b) => new Date(b.created_at) - new Date(a.created_at)).map(log => (
                     <div key={log.id} className="border-l-2 border-slate-200 pl-3 py-1">
                       <p className="text-sm font-medium text-slate-900">{log.action}</p>
                       <p className="text-xs text-slate-500">
-                        {format(new Date(log.created_date), "MMM d, yyyy 'at' h:mm a")}
+                        {log.created_at ? format(new Date(log.created_at), "MMM d, yyyy 'at' h:mm a") : ""}
                       </p>
                     </div>
                   ))}
