@@ -14,27 +14,30 @@ import {
   Menu,
   X,
   ChevronRight,
-  LogOut
+  LogOut,
+  Shield,
+  UserCog,
 } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 
-const navigation = [
-  { name: "Dashboard", href: "Dashboard", icon: LayoutDashboard },
-  { name: "PR Files", href: "PRFiles", icon: FileText },
-  { name: "My Assignments", href: "MyAssignments", icon: ClipboardList },
-  { name: "Master Sheet", href: "MasterSheet", icon: Table2 },
-  { name: "Employees", href: "Employees", icon: Users },
-  { name: "User Management", href: "UserManagement", icon: Users },
-  { name: "Reports", href: "Reports", icon: BarChart3 },
-];
-
 export default function Layout({ children, currentPageName }) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
-  const { logout } = useAuth();
+  const { logout, isLeader, userRole } = useAuth();
 
   const handleLogout = () => {
     logout();
   };
+
+  // Build navigation — User Management only for leaders
+  const navigation = [
+    { name: "Dashboard", href: "Dashboard", icon: LayoutDashboard },
+    { name: "PR Files", href: "PRFiles", icon: FileText },
+    { name: "My Assignments", href: "MyAssignments", icon: ClipboardList },
+    { name: "Master Sheet", href: "MasterSheet", icon: Table2 },
+    { name: "Employees", href: "Employees", icon: Users },
+    ...(isLeader ? [{ name: "User Management", href: "UserManagement", icon: UserCog }] : []),
+    { name: "Reports", href: "Reports", icon: BarChart3 },
+  ];
 
   return (
     <div className="min-h-screen bg-slate-50">
@@ -47,10 +50,12 @@ export default function Layout({ children, currentPageName }) {
       )}
 
       {/* Sidebar */}
-      <aside className={cn(
-        "fixed inset-y-0 left-0 z-50 w-64 bg-white border-r border-slate-200 transform transition-transform duration-200 ease-in-out lg:translate-x-0",
-        sidebarOpen ? "translate-x-0" : "-translate-x-full"
-      )}>
+      <aside
+        className={cn(
+          "fixed inset-y-0 left-0 z-50 w-64 bg-white border-r border-slate-200 transform transition-transform duration-200 ease-in-out lg:translate-x-0",
+          sidebarOpen ? "translate-x-0" : "-translate-x-full"
+        )}
+      >
         <div className="flex flex-col h-full">
           {/* Logo */}
           <div className="flex items-center justify-between h-16 px-6 border-b border-slate-200">
@@ -70,6 +75,22 @@ export default function Layout({ children, currentPageName }) {
             </Button>
           </div>
 
+          {userRole && (
+            <div className="px-4 pt-3 pb-1">
+              <span
+                className={cn(
+                  "inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold border",
+                  isLeader
+                    ? "bg-amber-100 text-amber-700 border-amber-200"
+                    : "bg-blue-100 text-blue-700 border-blue-200"
+                )}
+              >
+                <Shield className="w-3 h-3" />
+                {isLeader ? "Leader" : "Worker"}
+              </span>
+            </div>
+          )}
+
           {/* Navigation */}
           <ScrollArea className="flex-1 px-3 py-4">
             <nav className="space-y-1">
@@ -87,10 +108,12 @@ export default function Layout({ children, currentPageName }) {
                         : "text-slate-600 hover:bg-slate-100 hover:text-slate-900"
                     )}
                   >
-                    <item.icon className={cn(
-                      "w-5 h-5",
-                      isActive ? "text-blue-600" : "text-slate-400"
-                    )} />
+                    <item.icon
+                      className={cn(
+                        "w-5 h-5",
+                        isActive ? "text-blue-600" : "text-slate-400"
+                      )}
+                    />
                     {item.name}
                     {isActive && (
                       <ChevronRight className="w-4 h-4 ml-auto text-blue-400" />
