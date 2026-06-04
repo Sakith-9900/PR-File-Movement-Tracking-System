@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/config/supabase";
+import { useAuth } from "@/contexts/AuthContext";
 import { Link } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import { format } from "date-fns";
@@ -8,6 +9,7 @@ import PageHeader from "@/components/common/PageHeader";
 import StatusBadge from "@/components/common/StatusBadge";
 import FileTimeline from "@/components/profile/FileTimeline";
 import AssignmentDialog from "@/components/profile/AssignmentDialog";
+import DeleteRequestDialog from "@/components/profile/DeleteRequestDialog";
 import RFQPOSection from "@/components/profile/RFQPOSection";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -24,7 +26,9 @@ import {
   Download,
   ExternalLink,
   History,
-  Paperclip
+  Paperclip,
+  Trash2,
+  TriangleAlert,
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -33,7 +37,9 @@ export default function PRFileDetails() {
   const fileId = urlParams.get("id");
   
   const [isAssignOpen, setIsAssignOpen] = useState(false);
+  const [isDeleteRequestOpen, setIsDeleteRequestOpen] = useState(false);
   const queryClient = useQueryClient();
+  const { isLeader, currentUserCode, currentUserDbId } = useAuth();
 
   const { data: prFile, isLoading: loadingFile } = useQuery({
     queryKey: ["prFile", fileId],
@@ -125,6 +131,7 @@ export default function PRFileDetails() {
     enabled: !!fileId,
   });
 
+  // Assign mutation
   const assignMutation = useMutation({
     mutationFn: async (assignmentData) => {
       const sequenceNumber = assignments.length + 1;
@@ -169,6 +176,7 @@ export default function PRFileDetails() {
     },
   });
 
+  // Close file mutation (leader only)
   const closeMutation = useMutation({
     mutationFn: async () => {
       const { error: updateError } = await supabase
@@ -193,6 +201,53 @@ export default function PRFileDetails() {
       toast.success("File closed successfully");
     },
   });
+
+  // Leader: direct delete
+  const deleteMutation = useMutation({
+    mutationFn: async () => {
+      const { error } = await supabase
+        .from('pr_files')
+        .delete()
+        .eq('id', prFile.id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["prFiles"] });
+      toast.success("PR File deleted.");
+      window.location.href = createPageUrl("PRFiles");
+    },
+    onError: (err) => toast.error(`Failed to delete: ${err.message}`),
+  });
+
+  // Worker: submit delete request
+  const deleteRequestMutation = useMutation({
+    mutationFn: async ({ reason }) => {
+      const { error } = await supabase.from('delete_requests').insert({
+        pr_file_id: prFile.id,
+        pr_number: prFile.pr_number,
+        requested_by_id: currentUserDbId,
+        requested_by_code: currentUserCode,
+        reason,
+        status: 'pending',
+      });
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      toast.success("Delete request sent to leader for approval.");
+      setIsDeleteRequestOpen(false);
+    },
+    onError: (err) => toast.error(`Failed to send request: ${err.message}`),
+  });
+
+  const handleDeleteClick = () => {
+    if (isLeader) {
+      if (window.confirm(`Are you sure you want to permanently delete ${prFile.pr_number}? This cannot be undone.`)) {
+        deleteMutation.mutate();
+      }
+    } else {
+      setIsDeleteRequestOpen(true);
+    }
+  };
 
   if (loadingFile) {
     return (
@@ -239,19 +294,50 @@ export default function PRFileDetails() {
             </div>
             <p className="text-slate-500">{prFile.contract_name}</p>
           </div>
-          <div className="flex items-center gap-2">
+
+          <div className="flex items-center gap-2 flex-wrap">
             {prFile.status !== "Closed" && (
               <>
                 <Button variant="outline" onClick={() => setIsAssignOpen(true)}>
                   <UserPlus className="w-4 h-4 mr-2" />
                   Assign
                 </Button>
-                {prFile.status === "Pending Review" && (
-                  <Button onClick={() => closeMutation.mutate()} className="bg-emerald-600 hover:bg-emerald-700">
+
+                {/* Close File — leader only */}
+                {isLeader && prFile.status === "Pending Review" && (
+                  <Button
+                    onClick={() => closeMutation.mutate()}
+                    disabled={closeMutation.isPending}
+                    className="bg-emerald-600 hover:bg-emerald-700"
+                  >
                     <CheckCircle2 className="w-4 h-4 mr-2" />
                     Close File
                   </Button>
                 )}
+
+                {/* Delete — leader = direct, worker = request */}
+                <Button
+                  variant="outline"
+                  onClick={handleDeleteClick}
+                  disabled={deleteMutation.isPending}
+                  className={
+                    isLeader
+                      ? "border-red-200 text-red-600 hover:bg-red-50"
+                      : "border-amber-200 text-amber-700 hover:bg-amber-50"
+                  }
+                >
+                  {isLeader ? (
+                    <>
+                      <Trash2 className="w-4 h-4 mr-2" />
+                      Delete File
+                    </>
+                  ) : (
+                    <>
+                      <TriangleAlert className="w-4 h-4 mr-2" />
+                      Request Delete
+                    </>
+                  )}
+                </Button>
               </>
             )}
           </div>
@@ -405,6 +491,15 @@ export default function PRFileDetails() {
         employees={employees}
         onAssign={(data) => assignMutation.mutate(data)}
         isLoading={assignMutation.isPending}
+      />
+
+      {/* Delete Request Dialog (worker only) */}
+      <DeleteRequestDialog
+        open={isDeleteRequestOpen}
+        onOpenChange={setIsDeleteRequestOpen}
+        prFile={prFile}
+        onSubmit={({ reason }) => deleteRequestMutation.mutate({ reason })}
+        isLoading={deleteRequestMutation.isPending}
       />
     </div>
   );
