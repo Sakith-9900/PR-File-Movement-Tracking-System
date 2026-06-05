@@ -160,7 +160,7 @@ export default function PRFiles() {
     },
   });
 
-  // Leader: direct delete
+  // Administrator: direct delete
   const deleteMutation = useMutation({
     mutationFn: async (prFile) => {
       const { error } = await supabase
@@ -190,7 +190,7 @@ export default function PRFiles() {
       if (error) throw error;
     },
     onSuccess: () => {
-      toast.success("Delete request sent to leader for approval.");
+      toast.success("Delete request sent to administrator for approval.");
       setIsDeleteRequestOpen(false);
       setSelectedFile(null);
     },

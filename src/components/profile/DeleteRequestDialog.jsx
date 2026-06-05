@@ -41,11 +41,11 @@ export default function DeleteRequestDialog({
             Request Delete Permission
           </DialogTitle>
           <DialogDescription>
-            You need leader approval to delete{" "}
+            You need administrator approval to delete{" "}
             <span className="font-semibold text-slate-900">
               {prFile?.pr_number}
             </span>
-            . Your request will be sent to the leader for review.
+            . Your request will be sent to the administrator for review.
           </DialogDescription>
         </DialogHeader>
 

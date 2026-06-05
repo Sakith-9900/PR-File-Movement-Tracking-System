@@ -70,7 +70,7 @@ export default function PRFileCard({ prFile, onAssign, onDelete, isLeader, showA
               Assign
             </Button>
           )}
-          {/* Delete button — leader = direct delete, worker = request */}
+          {/* Delete button — administrator = direct delete, staff = request */}
           {onDelete && prFile.status !== "Closed" && (
             <Button
               variant="outline"

@@ -44,11 +44,12 @@ import {
   TriangleAlert,
   Eye,
   EyeOff,
+  ArrowDownCircle,
 } from "lucide-react";
 import { toast } from "sonner";
 import { format } from "date-fns";
 
-// ─── Add User Dialog (leader only) ────────────────────────────────────────────
+// ─── Add User Dialog (administrator only) ────────────────────────────────────────────
 function AddUserDialog({ open, onOpenChange, employees, users = [], onSuccess }) {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -79,7 +80,7 @@ function AddUserDialog({ open, onOpenChange, employees, users = [], onSuccess })
 
     setIsLoading(true);
     try {
-      // 1. Create Supabase auth user using a temporary client to preserve leader session
+      // 1. Create Supabase auth user using a temporary client to preserve administrator session
       const { createClient } = await import('@supabase/supabase-js');
       const tempSupabase = createClient(
         import.meta.env.VITE_SUPABASE_URL,
@@ -192,13 +193,13 @@ function AddUserDialog({ open, onOpenChange, employees, users = [], onSuccess })
                 <SelectItem value="worker">
                   <div className="flex items-center gap-2">
                     <Wrench className="w-4 h-4 text-blue-500" />
-                    Worker — can update, must request to delete
+                    Staff
                   </div>
                 </SelectItem>
                 <SelectItem value="leader">
                   <div className="flex items-center gap-2">
                     <Crown className="w-4 h-4 text-amber-500" />
-                    Leader — full access, approves delete requests
+                    Administrator
                   </div>
                 </SelectItem>
               </SelectContent>
@@ -242,13 +243,13 @@ function RoleBadge({ role }) {
   if (role === "leader") {
     return (
       <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-semibold bg-amber-100 text-amber-700 border border-amber-200">
-        <Crown className="w-3 h-3" /> Leader
+        <Crown className="w-3 h-3" /> Administrator
       </span>
     );
   }
   return (
     <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-semibold bg-blue-100 text-blue-700 border border-blue-200">
-      <Wrench className="w-3 h-3" /> Worker
+      <Wrench className="w-3 h-3" /> Staff
     </span>
   );
 }
@@ -291,7 +292,7 @@ export default function UserManagement() {
     },
   });
 
-  // Fetch pending delete requests (leader only)
+  // Fetch pending delete requests (administrator only)
   const { data: deleteRequests = [], isLoading: loadingRequests } = useQuery({
     queryKey: ["deleteRequests"],
     queryFn: async () => {
@@ -468,7 +469,7 @@ export default function UserManagement() {
           <CardContent className="p-5">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-amber-600 font-medium">Leaders</p>
+                <p className="text-sm text-amber-600 font-medium">Administrators</p>
                 <p className="text-3xl font-bold text-amber-900 mt-1">{leaders.length}</p>
               </div>
               <Crown className="w-10 h-10 text-amber-500/50" />
@@ -480,7 +481,7 @@ export default function UserManagement() {
           <CardContent className="p-5">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-slate-600 font-medium">Workers</p>
+                <p className="text-sm text-slate-600 font-medium">Staff</p>
                 <p className="text-3xl font-bold text-slate-900 mt-1">{workers.length}</p>
               </div>
               <Wrench className="w-10 h-10 text-slate-500/50" />
@@ -489,7 +490,7 @@ export default function UserManagement() {
         </Card>
       </div>
 
-      {/* ── Pending Delete Requests (leader only) ── */}
+      {/* ── Pending Delete Requests (administrator only) ── */}
       {isLeader && pendingRequests.length > 0 && (
         <Card className="mb-6 border-amber-200 bg-amber-50/40">
           <CardHeader className="pb-3">
@@ -627,7 +628,7 @@ export default function UserManagement() {
                       </div>
                     </div>
 
-                    {/* Actions (leader only, cannot modify self) */}
+                    {/* Actions (administrator only, cannot modify self) */}
                     {isLeader && !isCurrentUser && (
                       <div className="flex items-center gap-2 flex-shrink-0 flex-wrap">
                         {/* Promote / Demote */}
@@ -647,9 +648,12 @@ export default function UserManagement() {
                               : "border-amber-300 text-amber-700 hover:bg-amber-50"
                           }
                         >
-                          {user.role === "leader" ? (
+                          {changeRoleMutation.isPending &&
+                          changeRoleMutation.variables?.id === user.id ? (
+                            <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                          ) : user.role === "leader" ? (
                             <>
-                              <Wrench className="w-4 h-4 mr-1" />
+                              <ArrowDownCircle className="w-4 h-4 mr-1" />
                               Demote
                             </>
                           ) : (

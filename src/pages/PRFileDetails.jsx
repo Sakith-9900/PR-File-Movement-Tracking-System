@@ -176,7 +176,7 @@ export default function PRFileDetails() {
     },
   });
 
-  // Close file mutation (leader only)
+  // Close file mutation (administrator only)
   const closeMutation = useMutation({
     mutationFn: async () => {
       const { error: updateError } = await supabase
@@ -202,7 +202,7 @@ export default function PRFileDetails() {
     },
   });
 
-  // Leader: direct delete
+  // Administrator: direct delete
   const deleteMutation = useMutation({
     mutationFn: async () => {
       const { error } = await supabase
@@ -213,13 +213,13 @@ export default function PRFileDetails() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["prFiles"] });
-      toast.success("PR File deleted.");
+      toast.success("Delete request sent to administrator for approval.");
       window.location.href = createPageUrl("PRFiles");
     },
     onError: (err) => toast.error(`Failed to delete: ${err.message}`),
   });
 
-  // Worker: submit delete request
+  // Staff: submit delete request
   const deleteRequestMutation = useMutation({
     mutationFn: async ({ reason }) => {
       const { error } = await supabase.from('delete_requests').insert({
@@ -233,7 +233,7 @@ export default function PRFileDetails() {
       if (error) throw error;
     },
     onSuccess: () => {
-      toast.success("Delete request sent to leader for approval.");
+      toast.success("Delete request sent to administrator for approval.");
       setIsDeleteRequestOpen(false);
     },
     onError: (err) => toast.error(`Failed to send request: ${err.message}`),
@@ -303,7 +303,7 @@ export default function PRFileDetails() {
                   Assign
                 </Button>
 
-                {/* Close File — leader only */}
+                {/* Close File — administrator only */}
                 {isLeader && prFile.status === "Pending Review" && (
                   <Button
                     onClick={() => closeMutation.mutate()}
@@ -315,7 +315,7 @@ export default function PRFileDetails() {
                   </Button>
                 )}
 
-                {/* Delete — leader = direct, worker = request */}
+                {/* Delete — administrator = direct, staff = request */}
                 <Button
                   variant="outline"
                   onClick={handleDeleteClick}
@@ -493,7 +493,7 @@ export default function PRFileDetails() {
         isLoading={assignMutation.isPending}
       />
 
-      {/* Delete Request Dialog (worker only) */}
+      {/* Delete Request Dialog (staff only) */}
       <DeleteRequestDialog
         open={isDeleteRequestOpen}
         onOpenChange={setIsDeleteRequestOpen}

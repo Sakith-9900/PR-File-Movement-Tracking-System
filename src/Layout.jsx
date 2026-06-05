@@ -86,7 +86,7 @@ export default function Layout({ children, currentPageName }) {
                 )}
               >
                 <Shield className="w-3 h-3" />
-                {isLeader ? "Leader" : "Worker"}
+                {isLeader ? "Administrator" : "Staff"}
               </span>
             </div>
           )}
