@@ -10,8 +10,10 @@ import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Plus, Search, Users } from "lucide-react";
 import { toast } from "sonner";
+import { useAuth } from "@/contexts/AuthContext";
 
 export default function Employees() {
+  const { isLeader } = useAuth();
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [selectedEmployee, setSelectedEmployee] = useState(null);
   const [searchTerm, setSearchTerm] = useState("");
@@ -112,10 +114,12 @@ export default function Employees() {
         title="Employees"
         subtitle="Manage employee directory and short codes"
       >
-        <Button onClick={() => { setSelectedEmployee(null); setIsFormOpen(true); }}>
-          <Plus className="w-4 h-4 mr-2" />
-          Add Employee
-        </Button>
+        {isLeader && (
+          <Button onClick={() => { setSelectedEmployee(null); setIsFormOpen(true); }}>
+            <Plus className="w-4 h-4 mr-2" />
+            Add Employee
+          </Button>
+        )}
       </PageHeader>
 
       {/* Search */}
@@ -136,7 +140,7 @@ export default function Employees() {
           title={searchTerm ? "No employees found" : "No employees yet"}
           description={searchTerm ? "Try a different search term" : "Add your first employee to get started"}
           action={
-            !searchTerm && (
+            !searchTerm && isLeader && (
               <Button onClick={() => setIsFormOpen(true)}>
                 <Plus className="w-4 h-4 mr-2" />
                 Add Employee
@@ -151,6 +155,7 @@ export default function Employees() {
               key={employee.id}
               employee={employee}
               onEdit={handleEdit}
+              isLeader={isLeader}
             />
           ))}
         </div>

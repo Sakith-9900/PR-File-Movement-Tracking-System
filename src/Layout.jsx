@@ -22,7 +22,7 @@ import { useAuth } from "@/contexts/AuthContext";
 
 export default function Layout({ children, currentPageName }) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
-  const { logout, isLeader, userRole } = useAuth();
+  const { logout, isLeader, userRole, user, currentUserCode } = useAuth();
 
   const handleLogout = () => {
     logout();
@@ -126,6 +126,18 @@ export default function Layout({ children, currentPageName }) {
 
           {/* Footer */}
           <div className="p-4 border-t border-slate-200">
+            {user && (
+              <div className="mb-4 px-2">
+                <p className="text-sm font-semibold text-slate-900 truncate">
+                  {user.email}
+                </p>
+                {currentUserCode && (
+                  <p className="text-xs text-slate-500 mt-0.5">
+                    Code: {currentUserCode}
+                  </p>
+                )}
+              </div>
+            )}
             <Button
               variant="ghost"
               className="w-full justify-start text-slate-600 hover:text-slate-900"

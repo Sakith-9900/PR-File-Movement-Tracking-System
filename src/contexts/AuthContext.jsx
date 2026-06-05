@@ -66,18 +66,24 @@ export const AuthProvider = ({ children }) => {
       .single()
       .then(({ data, error }) => {
         if (error) {
-          // Silently ignore — role column may not exist yet (SQL migration pending)
-          console.warn('Could not fetch user role:', error.code, error.message);
+          console.error('Could not fetch user role. Error:', error);
+          setUserRole('worker');
           return;
         }
         if (data) {
-          setUserRole(data.role || 'worker');
+          const fetchedRole = (data.role || 'worker').trim().toLowerCase();
+          console.log("Setting user role to:", fetchedRole);
+          // Show a debug toast if toast is available or fallback
+          if (window.toast) {
+            window.toast.success(`Role loaded: ${fetchedRole}`);
+          }
+          setUserRole(fetchedRole);
           setCurrentUserCode(data.short_code || null);
           setCurrentUserDbId(data.id || null);
         }
       })
       .catch((err) => {
-        console.warn('Unexpected error fetching role:', err);
+        console.error('Unexpected error fetching role:', err);
       });
   };
 
