@@ -3,7 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Pencil, User, Mail, Phone, Building2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
-export default function EmployeeCard({ employee, onEdit }) {
+export default function EmployeeCard({ employee, onEdit, isLeader }) {
   return (
     <div className={cn(
       "bg-white rounded-xl border border-slate-200/60 p-5 transition-all hover:shadow-sm hover:border-slate-300",
@@ -19,9 +19,11 @@ export default function EmployeeCard({ employee, onEdit }) {
             <p className="text-sm text-slate-500">{employee.employee_id}</p>
           </div>
         </div>
-        <Button variant="ghost" size="icon" onClick={() => onEdit(employee)} className="h-8 w-8">
-          <Pencil className="w-4 h-4" />
-        </Button>
+        {isLeader && (
+          <Button variant="ghost" size="icon" onClick={() => onEdit(employee)} className="h-8 w-8">
+            <Pencil className="w-4 h-4" />
+          </Button>
+        )}
       </div>
       
       <div className="space-y-2 text-sm">

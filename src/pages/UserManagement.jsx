@@ -49,21 +49,47 @@ import { toast } from "sonner";
 import { format } from "date-fns";
 
 // ─── Add User Dialog (leader only) ────────────────────────────────────────────
-function AddUserDialog({ open, onOpenChange, employees, onSuccess }) {
+function AddUserDialog({ open, onOpenChange, employees, users = [], onSuccess }) {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [role, setRole] = useState("worker");
   const [employeeId, setEmployeeId] = useState("none");
   const [isLoading, setIsLoading] = useState(false);
-  const { signUp } = useAuth();
+
+  // Filter out employees that are already linked to an existing user account
+  const availableEmployees = employees.filter(
+    (emp) => !users.some((u) => u.employee_id === emp.id || u.employee_id === emp.employee_id)
+  );
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+
+    const selectedEmp = employeeId !== "none" ? employees.find((e) => e.id === employeeId) : null;
+
+    if (selectedEmp) {
+      const isLinked = users.some(
+        (u) => u.employee_id === selectedEmp.employee_id || u.employee_id === selectedEmp.id
+      );
+      if (isLinked) {
+        toast.error("This employee is already linked to another account.");
+        return;
+      }
+    }
+
     setIsLoading(true);
     try {
-      // 1. Create Supabase auth user
-      const { data } = await signUp(email, password);
+      // 1. Create Supabase auth user using a temporary client to preserve leader session
+      const { createClient } = await import('@supabase/supabase-js');
+      const tempSupabase = createClient(
+        import.meta.env.VITE_SUPABASE_URL,
+        import.meta.env.VITE_SUPABASE_ANON_KEY,
+        { auth: { persistSession: false, autoRefreshToken: false } }
+      );
+      
+      const { data, error: signUpError } = await tempSupabase.auth.signUp({ email, password });
+      if (signUpError) throw signUpError;
+      
       const newAuthUser = data?.user;
 
       if (!newAuthUser) {
@@ -73,7 +99,6 @@ function AddUserDialog({ open, onOpenChange, employees, onSuccess }) {
       }
 
       // 2. Upsert public users record with role & optional employee link
-      const selectedEmp = employees.find((e) => e.id === employeeId);
       const shortCode = selectedEmp?.short_code || email.split("@")[0].toUpperCase();
 
       const { error: upsertError } = await supabase.from("users").upsert({
@@ -188,7 +213,7 @@ function AddUserDialog({ open, onOpenChange, employees, onSuccess }) {
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="none">No employee linked</SelectItem>
-                {employees.map((emp) => (
+                {availableEmployees.map((emp) => (
                   <SelectItem key={emp.id} value={emp.id}>
                     {emp.short_code} — {emp.full_name}
                   </SelectItem>
@@ -711,6 +736,7 @@ export default function UserManagement() {
         open={isAddUserOpen}
         onOpenChange={setIsAddUserOpen}
         employees={employees}
+        users={users}
         onSuccess={() => queryClient.invalidateQueries({ queryKey: ["users"] })}
       />
     </div>
